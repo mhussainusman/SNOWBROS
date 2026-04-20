@@ -1,11 +1,11 @@
 #pragma once
 #include <SFML/Graphics.hpp>
+#include <vector>
 #include "Player.h"
+#include "Platform.h"
 
-/**
- * @class Game
- * @brief Core game class. Owns the window and drives the game loop.
- */
+// @class Game: Owns the window and drives the game loop.
+ 
 class Game {
 public:
     Game();
@@ -18,4 +18,5 @@ private:
 
     sf::RenderWindow mWindow;
     Player mPlayer;
+    std::vector<Platform> mPlatforms; // list of platforms in the level
 };
