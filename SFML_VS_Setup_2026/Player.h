@@ -3,8 +3,8 @@
 #include <vector>
 #include "Platform.h"
 
-// class Player: Represents the player. Handles movement, gravity, and jumping.
- 
+
+// Player: movement, gravity, jumping, one-way platform collision
 class Player {
 public:
     Player();
@@ -16,15 +16,14 @@ public:
     sf::FloatRect getBounds() const;
 
 private:
-    void applyGravity(float deltaTime);
     void handleCollision(const std::vector<Platform>& platforms);
 
     sf::RectangleShape mShape;
     float mSpeed;
-    float mVelocityY;      // vertical speed (positive = falling)
-    bool mIsOnGround;      // is player standing on a platform?
+    float mVelocityY;    // positive = falling down, negative = jumping up
+    bool mIsOnGround;    // true when standing on a platform
 
-    // constants
-    const float GRAVITY = 800.f;
-    const float JUMP_FORCE = -450.f;
+    const float GRAVITY = 900.f;
+    const float JUMP_FORCE = -480.f;    // negative = upward in SFML
+    const float MAX_FALL_SPEED = 600.f;
 };

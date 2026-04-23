@@ -1,59 +1,79 @@
 #include "Player.h"
 
 Player::Player()
-    : mSpeed(200.f),
-    mVelocityY(0.f),
-    mIsOnGround(false) {
+    : mSpeed(180.f),
+      mVelocityY(0.f),
+      mIsOnGround(false) {
     mShape.setSize(sf::Vector2f(40.f, 50.f));
     mShape.setFillColor(sf::Color(100, 180, 255));
-    mShape.setPosition(100.f, 100.f); // start near top so we can see falling
+    mShape.setPosition(100.f, 100.f);
+
 }
 
 void Player::update(float deltaTime, const std::vector<Platform>& platforms) {
-    // left and right movement
-    sf::Vector2f velocity(0.f, 0.f);
+
+    // --- HORIZONTAL MOVEMENT ---
+    // check left and right keys and move accordingly
+    float moveX = 0.f;
 
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::A) ||
         sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
-        velocity.x -= mSpeed;
+        moveX = -mSpeed;  // negative X = move left
 
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::D) ||
         sf::Keyboard::isKeyPressed(sf::Keyboard::Right))
-        velocity.x += mSpeed;
+        moveX = mSpeed;   // positive X = move right
 
-    mShape.move(velocity * deltaTime);
+    // multiply by deltaTime to make movement frame-rate independent
+    mShape.move(moveX * deltaTime, 0.f);
 
-    // jump — only allowed when standing on ground
+    // --- JUMPING ---
+    // only allowed when player is standing on something
     if ((sf::Keyboard::isKeyPressed(sf::Keyboard::W) ||
-        sf::Keyboard::isKeyPressed(sf::Keyboard::Up)) && mIsOnGround) {
-        mVelocityY = JUMP_FORCE;
-        mIsOnGround = false;
+         sf::Keyboard::isKeyPressed(sf::Keyboard::Up)) && mIsOnGround) {
+        mVelocityY = JUMP_FORCE;  // shoot upward with negative velocity
+        mIsOnGround = false;      // no longer on ground
     }
 
-    // apply gravity
-    applyGravity(deltaTime);
-
-    // check platform collisions
-    handleCollision(platforms);
-}
-
-void Player::applyGravity(float deltaTime) {
-    // increase downward speed every frame
+    // --- GRAVITY ---
+    // every frame, increase downward speed (simulate gravity pulling down)
     mVelocityY += GRAVITY * deltaTime;
+
+    // cap falling speed so player doesnt fall through platforms at high speed
+    if (mVelocityY > MAX_FALL_SPEED)
+        mVelocityY = MAX_FALL_SPEED;
+
+    // apply vertical movement
     mShape.move(0.f, mVelocityY * deltaTime);
+
+    // --- COLLISION ---
+    // check and resolve platform collisions after moving
+    handleCollision(platforms);
+
+    // --- SCREEN BOUNDARIES ---
+    // keep player inside the window horizontally
+    sf::Vector2f pos = mShape.getPosition();
+    if (pos.x < 0.f)
+        mShape.setPosition(0.f, pos.y);
+    if (pos.x + mShape.getSize().x > 800.f)
+        mShape.setPosition(800.f - mShape.getSize().x, pos.y);
 }
 
 void Player::handleCollision(const std::vector<Platform>& platforms) {
-    mIsOnGround = false;
+    mIsOnGround = false; // assume not on ground, prove it below
 
-    for (const auto& platform : platforms) {
-        sf::FloatRect playerBounds = mShape.getGlobalBounds();
-        sf::FloatRect platformBounds = platform.getBounds();
+    for (int i = 0; i < platforms.size();i++) {
+        sf::FloatRect player = mShape.getGlobalBounds();
+        sf::FloatRect plat   = platforms[i].getBounds();
 
-        if (playerBounds.intersects(platformBounds)) {
-            // push player back on top of the platform
-            mShape.setPosition(mShape.getPosition().x,
-                platformBounds.top - mShape.getSize().y);
+        // skip if no overlap at all
+        if (!player.intersects(plat))
+            continue;
+
+        float overlapTop = (player.top + player.height) - plat.top;
+
+        if (mVelocityY >= 0 && overlapTop > 0 && overlapTop < 20.f) {
+            mShape.move(0.f, -overlapTop);// - is there as we move up
             mVelocityY = 0.f;
             mIsOnGround = true;
         }

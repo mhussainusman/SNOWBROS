@@ -3,6 +3,7 @@
 #include <vector>
 #include "Player.h"
 #include "Platform.h"
+using namespace std;
 
 // @class Game: Owns the window and drives the game loop.
  
@@ -15,8 +16,8 @@ private:
     void processEvents();
     void update(float deltaTime);
     void render();
-
-    sf::RenderWindow mWindow;
-    Player mPlayer;
-    std::vector<Platform> mPlatforms; // list of platforms in the level
+    // member variables
+	sf::RenderWindow mWindow; 
+    Player mPlayer; // from player.h
+	vector<Platform> mPlatforms; // from platform.h, vector to hold multiple platforms
 };

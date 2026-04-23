@@ -12,4 +12,4 @@ void Platform::draw(sf::RenderWindow& window) {
 
 sf::FloatRect Platform::getBounds() const {
     return mShape.getGlobalBounds();
-}
+} 
