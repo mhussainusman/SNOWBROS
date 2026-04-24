@@ -1,19 +1,16 @@
 #pragma once
-
 #include <SFML/Graphics.hpp>
 
-// class Platform: A static platform the player can stand on.
- 
+// Platform: a static surface that players and enemies can stand on
 class Platform {
 public:
     Platform(float x, float y, float width, float height);
 
-    void draw(sf::RenderWindow& window);
-
-    // returns the platform's bounding rectangle
-    // used for collision detection with player
+    // showHitbox: when true draws blue outline showing collision area
+    void draw(sf::RenderWindow& window, bool showHitbox);
     sf::FloatRect getBounds() const;
 
 private:
-    sf::RectangleShape mShape;
+    sf::RectangleShape mVisual;   // what gets drawn on screen
+    sf::RectangleShape mHitbox;   // used for collision detection
 };

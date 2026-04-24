@@ -3,61 +3,100 @@
 #include <vector>
 #include "Platform.h"
 
-// Enemy: abstract base class — all enemies inherit from this
-// any class with = 0 functions cannot be created directly
+// Enemy: abstract base class
+// all enemies inherit from this
+// cannot be created directly because of = 0 functions
 class Enemy {
 public:
 
-    // constructor: sets starting position and how many hits to encase
+    // x, y = starting position
+    // hitsToEncase = snowballs needed to fully cover this enemy
     Enemy(float x, float y, int hitsToEncase);
 
-    // pure virtual functions — every enemy MUST override these
+    // pure virtual: every enemy must write their own version
     virtual void update(float deltaTime, const std::vector<Platform>& platforms) = 0;
-    virtual void draw(sf::RenderWindow& window) = 0;
+    // draw: second parameter indicates         whether to render hitboxes for debugging
+    virtual void draw(sf::RenderWindow& window, bool showHitbox) = 0;
 
-    // these are the same for all enemies so we write them once here
-    void takeDamage();           // called when snowball hits enemy
-    bool isFullyEncased() const; // true when snow coat is full
-    bool isDefeated() const;     // true when rolled into another enemy
-    bool isDead() const;         // true when enemy should be removed
+    // same for all enemies, written once here
+    void takeDamage();
+    bool isFullyEncased() const;
+    bool isDead() const;
+    bool isRolling() const;
 
-    sf::FloatRect getBounds() const; // used for collision detection
+    // hitbox for collision detection — separate from visual
+    sf::FloatRect getBounds() const;
+
+    void updateMelt(float deltaTime);
+    // called when player stands next to encased enemy and presses kick button
+    void startRolling(bool kickedRight);
+
+    // handles rolling movement every frame
+    void updateRolling(float deltaTime, const std::vector<Platform>& platforms);
+
+    bool isRollingRight() const; // returns which direction rolling
+    void setDead();              // instantly kills this enemy
 
 protected:
-    // protected means child classes CAN access these
-    // but outside code cannot
 
-    sf::RectangleShape mShape;  // visual rectangle for now
-    float mVelocityY;           // vertical speed for gravity
-    bool mIsOnGround;           // is enemy standing on a platform
-    bool mDefeated;             // has been rolled into another enemy
-    bool mDead;                 // should be removed from game
+    // hitbox: used for all collision detection and physics
+    // this never changes size — always accurate hit area
+    sf::RectangleShape mHitbox;
 
-    int mSnowHits;              // how many times hit by snowball so far
-    int mHitsToEncase;          // how many hits needed to fully encase
-    bool mEncased;              // is enemy fully covered in snow
+    // visual: what gets drawn on screen
+    // currently a colored rectangle — later replaced with sprite
+    // can be bigger than hitbox
+    sf::RectangleShape mVisual;
 
-    // physics constants same for all enemies
+    float mVelocityY;       // vertical speed: positive=falling, negative=rising
+    bool mIsOnGround;       // true when standing on a platform
+    bool mDead;             // true when should be removed from game
+
+    int mSnowHits;          // how many snowballs have hit so far
+    int mHitsToEncase;      // how many hits needed to fully encase
+    bool mEncased;          // true when fully covered in snow
+    bool mRolling;          // true when player has kicked this enemy
+    float mRollSpeed;       // how fast it rolls when kicked
+    bool mRollingRight;     // which direction it is rolling
+
+    float mMeltTimer;         // counts how long enemy has been encased
+    float mMeltTime;          // how long until enemy melts (3 or 6 seconds)
+    sf::Color mOriginalColor; // stores original color to restore after melting
+
     const float GRAVITY = 900.f;
     const float MAX_FALL_SPEED = 600.f;
 
-    // shared gravity function — enemies fall same way as player
+    // gravity and platform landing — shared by all enemies
     void applyGravity(float deltaTime, const std::vector<Platform>& platforms);
 };
 
-// Botom: simplest enemy, walks left and right, falls with gravity
+
+// Botom: basic enemy
+// walks left and right, falls with gravity, turns at walls
 // inherits from Enemy
 class Botom : public Enemy {
 public:
     Botom(float x, float y);
 
-    // overriding the pure virtual functions from Enemy
+    // overriding pure virtual functions from Enemy
     void update(float deltaTime, const std::vector<Platform>& platforms) override;
-    void draw(sf::RenderWindow& window) override;
+    void draw(sf::RenderWindow& window, bool showHitbox) override;
+
+    void setPlayerPosition(sf::Vector2f playerPos);
+
 
 private:
-    float mMoveSpeed;    // how fast Botom walks
-    bool mMovingRight;   // which direction currently walking
-    float mDirectionTimer;   // how long until Botom changes direction
-    float mDirectionInterval; // how many seconds between direction changes
+    float mMoveSpeed;          // how fast Botom walks
+    bool mMovingRight;         // current walking direction
+    float mDirectionTimer;     // counts time since last direction change
+    float mDirectionInterval;  // seconds until next direction change
+
+    sf::Vector2f mPlayerPos;   // where the player currently is
+    float mJumpTimer;          // counts time since last jump
+    float mJumpInterval;       // how often enemy jumps
+    float mVelocityX;          // horizontal velocity
+    bool mCanJump;             // true when on ground and can jump
+
+    const float JUMP_FORCE = -520.f; 
+
 };

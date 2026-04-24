@@ -1,46 +1,75 @@
 #include "Snowball.h"
 
-Snowball::Snowball(float x, float y, bool movingRight)
+Snowball::Snowball(float x, float y, bool movingRight, int playerIndex)
     : mSpeed(400.f),
     mMovingRight(movingRight),
     mDistanceTravelled(0.f),
-    mMaxDistance(800.f),  // travels full screen width
-    mExpired(false) {
-    mShape.setSize(sf::Vector2f(16.f, 16.f));
-    mShape.setFillColor(sf::Color(150, 220, 255)); // light blue snowball
-    mShape.setPosition(x, y);
+    mMaxDistance(800.f),
+    mExpired(false),
+    mPlayerIndex(playerIndex) {
+
+    // hitbox — actual collision area
+    mHitbox.setSize(sf::Vector2f(20.f, 16.f));
+    mHitbox.setPosition(x, y);
+    mHitbox.setFillColor(sf::Color::Transparent);
+
+    // visual — what player sees
+    // slightly bigger than hitbox so it looks good
+    mVisual.setSize(sf::Vector2f(20.f, 16.f));
+    mVisual.setPosition(x, y);
+    mVisual.setFillColor(sf::Color(150, 220, 255)); // light blue snowball
 }
 
 void Snowball::update(float deltaTime) {
-    // move left or right depending on direction player was facing
-    float moveX = mMovingRight ? mSpeed : -mSpeed;
-    mShape.move(moveX * deltaTime, 0.f);
 
-    // track how far it has travelled
+    // move left or right depending on direction
+    float moveX = mMovingRight ? mSpeed : -mSpeed;
+    mHitbox.move(moveX * deltaTime, 0.f);
+    mVisual.move(moveX * deltaTime, 0.f);
+
+    // track total distance travelled
     mDistanceTravelled += mSpeed * deltaTime;
 
-    // expire when it reaches max distance
+    // expire when max distance reached
     if (mDistanceTravelled >= mMaxDistance)
         mExpired = true;
 
-    // also expire if it goes off screen
-    sf::Vector2f pos = mShape.getPosition();
-    if (pos.x > 800.f || pos.x + mShape.getSize().x < 0.f)
+    // expire if goes off screen
+    sf::Vector2f pos = mHitbox.getPosition();
+    if (pos.x > 820.f || pos.x + mHitbox.getSize().x < -20.f)
         mExpired = true;
+}
+
+void Snowball::draw(sf::RenderWindow& window, bool showHitbox) {
+
+    if (!showHitbox) {
+        // normal mode — draw visual
+        window.draw(mVisual);
+    }
+    else {
+        // debug mode — draw hitbox outline in yellow
+        sf::RectangleShape debugBox;
+        debugBox.setPosition(mHitbox.getPosition());
+        debugBox.setSize(mHitbox.getSize());
+        debugBox.setFillColor(sf::Color::Transparent);
+        debugBox.setOutlineColor(sf::Color::Yellow); // yellow for projectiles
+        debugBox.setOutlineThickness(2.f);
+        window.draw(debugBox);
+    }
+}
+
+sf::FloatRect Snowball::getBounds() const {
+    return mHitbox.getGlobalBounds();
+}
+
+bool Snowball::isExpired() const {
+    return mExpired;
 }
 
 void Snowball::setExpired() {
     mExpired = true;
 }
 
-void Snowball::draw(sf::RenderWindow& window) {
-    window.draw(mShape);
-}
-
-sf::FloatRect Snowball::getBounds() const {
-    return mShape.getGlobalBounds();
-}
-
-bool Snowball::isExpired() const {
-    return mExpired;
+int Snowball::getPlayerIndex() const {
+    return mPlayerIndex;
 }

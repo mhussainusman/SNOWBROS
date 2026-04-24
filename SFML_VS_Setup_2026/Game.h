@@ -3,10 +3,10 @@
 #include <vector>
 #include "Player.h"
 #include "Platform.h"
+#include"Enemy.h"
+#include "Snowball.h"
 using namespace std;
-
-// @class Game: Owns the window and drives the game loop.
- 
+// Game: owns the window, runs the game loop
 class Game {
 public:
     Game();
@@ -16,8 +16,21 @@ private:
     void processEvents();
     void update(float deltaTime);
     void render();
-    // member variables
-	sf::RenderWindow mWindow; 
-    Player mPlayer; // from player.h
-	vector<Platform> mPlatforms; // from platform.h, vector to hold multiple platforms
+
+   
+    void checkPlayerEnemyCollision();   // checks if player touches enemy
+    void checkSnowballEnemyCollision();
+    void checkRollingEnemyCollision(); // rolling snowball hits other enemies
+
+    sf::RenderWindow mWindow;
+
+    Player mPlayer1 ;
+    Player mPlayer2;
+     vector<Platform> mPlatforms;
+     vector<Enemy*> mEnemies;  // Enemy* pointer for polymorphism
+     vector<Snowball>mSnowballs;
+
+    bool mShowHitboxes; // toggled by pressing H key
+
+
 };
