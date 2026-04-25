@@ -37,6 +37,11 @@ public:
     bool isRollingRight() const; // returns which direction rolling
     void setDead();              // instantly kills this enemy
 
+    virtual int getPoints() const = 0;
+
+    bool isPartiallyEncased() const; // true when hit once but not fully encased
+
+
 protected:
 
     // hitbox: used for all collision detection and physics
@@ -82,7 +87,7 @@ public:
     void update(float deltaTime, const std::vector<Platform>& platforms) override;
     void draw(sf::RenderWindow& window, bool showHitbox) override;
 
-    void setPlayerPosition(sf::Vector2f playerPos);
+    int getPoints() const override;
 
 
 private:
@@ -91,12 +96,61 @@ private:
     float mDirectionTimer;     // counts time since last direction change
     float mDirectionInterval;  // seconds until next direction change
 
-    sf::Vector2f mPlayerPos;   // where the player currently is
     float mJumpTimer;          // counts time since last jump
     float mJumpInterval;       // how often enemy jumps
-    float mVelocityX;          // horizontal velocity
-    bool mCanJump;             // true when on ground and can jump
+  
 
-    const float JUMP_FORCE = -520.f; 
+    const float JUMP_FORCE = -520.f;
 
+};
+// ------Flying Enemy 
+
+class FlyingEnemy : public Botom {
+public:
+    FlyingEnemy(float x, float y);
+
+    void update(float deltaTime,
+        const std::vector<Platform>& platforms) override;
+    void draw(sf::RenderWindow& window, bool showHitbox) override;
+    int getPoints() const override;
+
+protected:
+    bool mFlying;           // true when in flight mode
+    float mFlightTimer;     // counts time in current state
+    float mFlightInterval;  // how long before taking flight
+    float mFlightDuration;  // how long flight lasts
+    float mFlightSpeedX;    // horizontal speed while flying
+    float mFlightSpeedY;    // vertical speed while flying
+};
+
+// -----Tornado Enermy---------
+
+// Tornado: inherits FlyingEnemy
+// faster flight, throws knife at nearest player
+class Tornado : public FlyingEnemy {
+public:
+    Tornado(float x, float y);
+
+    void update(float deltaTime,
+        const std::vector<Platform>& platforms) override;
+    void draw(sf::RenderWindow& window, bool showHitbox) override;
+    int getPoints() const override;
+
+    // Game passes nearest player position every frame
+    void setNearestPlayerPos(sf::Vector2f pos);
+
+    // returns knife hitbox for collision with player
+    sf::FloatRect getKnifeBounds() const;
+    bool isKnifeActive() const;
+
+private:
+    // knife variables — no separate class needed
+    sf::RectangleShape mKnifeVisual;  // yellow rectangle
+    sf::Vector2f mKnifeDirection;     // normalized direction
+    bool mKnifeActive;                // is knife flying right now
+    float mKnifeSpeed;                // how fast knife travels
+    float mKnifeTimer;                // counts time since last throw
+    float mKnifeInterval;             // seconds between throws
+
+    sf::Vector2f mNearestPlayerPos;   // where to aim
 };

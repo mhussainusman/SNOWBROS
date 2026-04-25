@@ -6,33 +6,58 @@ Player::Player(int playerIndex)
     mIsOnGround(false),
     mFacingRight(true),
     mPlayerIndex(playerIndex),
-    mThrowKeyHeld(false) {
+    mThrowKeyHeld(false),
+    mLives(3),            // 3 total = 2 shown in HUD + 1 base life
+    mRespawnTimer(0.f),
+    mRespawnTime(3.f),    // 3 seconds invincibility after respawn
+    mRespawning(false),
+    mStartX(0.f),
+    mStartY(0.f) {
 
-    // set size
     mHitbox.setSize(sf::Vector2f(40.f, 50.f));
     mVisual.setSize(sf::Vector2f(40.f, 50.f));
     mHitbox.setFillColor(sf::Color::Transparent);
 
-    // player 1 starts left side, player 2 starts right side
+    // player 1 respawns at midpoint of right half of ground
+    // player 2 respawns at midpoint of left half of ground
     if (mPlayerIndex == 0) {
-        mHitbox.setPosition(100.f, 100.f);
-        mVisual.setPosition(100.f, 100.f);
+        mStartX = 600.f;
+        mStartY = 490.f;
         mVisual.setFillColor(sf::Color(100, 180, 255)); // light blue
     }
     else {
-        mHitbox.setPosition(650.f, 100.f);
-        mVisual.setPosition(650.f, 100.f);
-        mVisual.setFillColor(sf::Color(100, 255, 150)); // light green
+        mStartX = 200.f;
+        mStartY = 490.f;
+        mVisual.setFillColor(sf::Color(255, 165, 0)); // light green
     }
+
+    mHitbox.setPosition(mStartX, mStartY);
+    mVisual.setPosition(mStartX, mStartY);
 }
 
 void Player::update(float deltaTime,
     const std::vector<Platform>& platforms) {
 
+    // if no lives left stop updating completely
+    if (mLives <= 0) return;
+
+    // respawn invincibility timer
+    // counts up every frame until 3 seconds passed
+    if (mRespawning) {
+        mRespawnTimer += deltaTime;
+        if (mRespawnTimer >= mRespawnTime) {
+            mRespawning = false;   // invincibility over
+            mRespawnTimer = 0.f;   // reset for next death
+        }
+        // player can still move during invincibility
+        // just cannot lose life
+    }
+
+    // horizontal movement
     float moveX = 0.f;
 
     if (mPlayerIndex == 0) {
-        // player 1 controls — arrow keys
+        // player 1 — arrow keys
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
             moveX = -mSpeed;
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right))
@@ -43,7 +68,7 @@ void Player::update(float deltaTime,
         }
     }
     else {
-        // player 2 controls — WASD
+        // player 2 — WASD
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::A))
             moveX = -mSpeed;
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::D))
@@ -69,7 +94,7 @@ void Player::update(float deltaTime,
     mHitbox.move(0.f, mVelocityY * deltaTime);
     mVisual.move(0.f, mVelocityY * deltaTime);
 
-    // collision
+    // platform collision
     handleCollision(platforms);
 
     // screen edges
@@ -83,7 +108,7 @@ void Player::update(float deltaTime,
         mVisual.setPosition(800.f - mHitbox.getSize().x, pos.y);
     }
 
-    // track throw key — reset when key released
+    // track throw key
     bool throwPressed = false;
     if (mPlayerIndex == 0)
         throwPressed = sf::Keyboard::isKeyPressed(sf::Keyboard::Down);
@@ -95,20 +120,57 @@ void Player::update(float deltaTime,
 }
 
 bool Player::wantsToThrow() {
-    // check throw key for this player
+    // if dead dont throw
+    if (mLives <= 0) return false;
+
     bool throwPressed = false;
     if (mPlayerIndex == 0)
         throwPressed = sf::Keyboard::isKeyPressed(sf::Keyboard::Down);
     else
         throwPressed = sf::Keyboard::isKeyPressed(sf::Keyboard::S);
 
-    // only return true once per key press
-    // mThrowKeyHeld prevents holding key from spamming snowballs
-    if (throwPressed && !mThrowKeyHeld) {
+        if (throwPressed && !mThrowKeyHeld) {
         mThrowKeyHeld = true;
         return true;
     }
     return false;
+}
+
+void Player::loseLife() {
+    // ignore if already respawning — still invincible
+    if (mRespawning) return;
+
+    // ignore if already dead
+    if (mLives <= 0) return;
+
+    mLives--;
+
+    if (mLives > 0) {
+        // still has lives — respawn at starting position
+        mHitbox.setPosition(mStartX, mStartY);
+        mVisual.setPosition(mStartX, mStartY);
+        mVelocityY = 0.f;
+        mRespawnTimer = 0.f;  // reset timer from zero
+        mRespawning = true;   // start invincibility
+    }
+    else {
+        // no lives left — move off screen so player disappears
+        mHitbox.setPosition(-200.f, -200.f);
+        mVisual.setPosition(-200.f, -200.f);
+        mVelocityY = 0.f;
+    }
+}
+
+int Player::getLives() const {
+    return mLives;
+}
+
+bool Player::isAlive() const {
+    return mLives > 0;
+}
+
+bool Player::isRespawning() const {
+    return mRespawning;
 }
 
 void Player::handleCollision(const std::vector<Platform>& platforms) {
@@ -133,6 +195,10 @@ void Player::handleCollision(const std::vector<Platform>& platforms) {
 }
 
 void Player::draw(sf::RenderWindow& window, bool showHitbox) {
+
+    // if dead dont draw anything
+    if (mLives <= 0) return;
+
     if (!showHitbox) {
         window.draw(mVisual);
     }

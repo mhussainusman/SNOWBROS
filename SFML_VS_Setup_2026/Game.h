@@ -21,6 +21,7 @@ private:
     void checkPlayerEnemyCollision();   // checks if player touches enemy
     void checkSnowballEnemyCollision();
     void checkRollingEnemyCollision(); // rolling snowball hits other enemies
+	void checkKnifePlayerCollision();   // knife hits player
 
     sf::RenderWindow mWindow;
 
@@ -31,6 +32,11 @@ private:
      vector<Snowball>mSnowballs;
 
     bool mShowHitboxes; // toggled by pressing H key
+
+    int mScore1;
+    int mScore2;
+    bool mGameOver;
+
 
 
 };

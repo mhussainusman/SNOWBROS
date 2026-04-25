@@ -22,6 +22,13 @@ public:
 // returns true if a snowball should be spawned
     bool wantsToThrow();
 
+    // lives system
+    int getLives() const;        // returns current lives
+    void loseLife();             // called when player touches enemy
+    bool isAlive() const;        // true when lives > 0
+    bool isRespawning() const;   // true during respawn invincibility period
+  
+
 private:
     void handleCollision(const std::vector<Platform>& platforms);
 
@@ -39,4 +46,14 @@ private:
     const float GRAVITY = 900.f;
     const float JUMP_FORCE = -480.f;
     const float MAX_FALL_SPEED = 600.f;
+
+    int mLives;                  // current lives remaining
+    float mRespawnTimer;         // counts down after death
+    float mRespawnTime;          // how long respawn invincibility lasts
+    bool mRespawning;            // true during invincibility period
+
+    // starting position — used for respawning
+    float mStartX;
+    float mStartY;
+
 };

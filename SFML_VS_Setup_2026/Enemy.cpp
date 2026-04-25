@@ -122,24 +122,23 @@ void Enemy::applyGravity(float deltaTime, const std::vector<Platform>& platforms
     }
 }
 
-bool Enemy::isRollingRight() const {return mRollingRight;}
+bool Enemy::isRollingRight() const { return mRollingRight; }
 
 void Enemy::setDead() { mDead = true; }
-   
+bool Enemy::isPartiallyEncased() const { return mSnowHits > 0 && !mEncased; }
 
 
 // --- BOTOM ---
 
 Botom::Botom(float x, float y)
     : Enemy(x, y, 2),
-    mMoveSpeed(150.f),
-    mMovingRight(rand()%2),
+    mMoveSpeed(130.f),
+    mMovingRight(rand() % 2),
     mDirectionTimer(0.f),
-    mDirectionInterval(0.5f+ (rand()%200)/100.f),
+    mDirectionInterval(2.f),
     mJumpTimer(0.f),
-    mJumpInterval(1.5f),
-    mVelocityX(0.f),
-    mCanJump(false) {
+    mJumpInterval(1.5f)
+    {
 
     mVisual.setSize(sf::Vector2f(38.f, 42.f));
     mHitbox.setSize(sf::Vector2f(34.f, 38.f));
@@ -152,98 +151,67 @@ Botom::Botom(float x, float y)
     mMovingRight = (rand() % 2 == 0);
 }
 
-void Botom::setPlayerPosition(sf::Vector2f playerPos) {
-    mPlayerPos = playerPos;
-}
+void Botom::update(float deltaTime,
+    const std::vector<Platform>& platforms) {
 
-void Botom::update(float deltaTime, const std::vector<Platform>& platforms) {
-
-    // if rolling handle rolling and skip everything else
     if (mRolling) {
         updateRolling(deltaTime, platforms);
         return;
     }
 
-    // update melt timer
     updateMelt(deltaTime);
 
-    // if fully encased — stop movement but gravity still applies
     if (mEncased) {
         applyGravity(deltaTime, platforms);
         mVisual.setPosition(mHitbox.getPosition());
         return;
     }
 
-    // if partially hit — stop horizontal movement but still fall
     if (mSnowHits > 0) {
         applyGravity(deltaTime, platforms);
         mVisual.setPosition(mHitbox.getPosition());
         return;
     }
 
-
-    // --- RANDOM WALK ---
-    // count time and randomly change direction
-    mDirectionTimer += deltaTime;
-    if (mDirectionTimer >= mDirectionInterval) {
-        mDirectionTimer = 0.f;
-
-        // randomly pick next direction — 50/50 chance
-        mMovingRight = (rand() % 2 == 0);
-
-        // next direction change between 0.5 and 2.5 seconds
-        // short intervals make movement feel organic and unpredictable
-        mDirectionInterval = 0.5f + (rand() % 200) / 100.f;
-    }
-
-    // move left or right at full speed
+    // --- SIMPLE WALK ---
+    // just walk in current direction
+    // no random direction changes mid-platform
     float moveX = mMovingRight ? mMoveSpeed : -mMoveSpeed;
     mHitbox.move(moveX * deltaTime, 0.f);
-    mVisual.move(moveX * deltaTime, 0.f);
 
-    // --- SCREEN EDGE HANDLING ---
+    // --- WALL BOUNCE ---
+    // only turn at screen walls — nothing else
     sf::Vector2f pos = mHitbox.getPosition();
     if (pos.x < 0.f) {
         mHitbox.setPosition(0.f, pos.y);
-        mVisual.setPosition(0.f, pos.y);
-        mMovingRight = true; // bounce right
+        mMovingRight = true;
     }
     if (pos.x + mHitbox.getSize().x > 800.f) {
         mHitbox.setPosition(800.f - mHitbox.getSize().x, pos.y);
-        mVisual.setPosition(800.f - mHitbox.getSize().x, pos.y);
-        mMovingRight = false; // bounce left
+        mMovingRight = false;
     }
 
-    // --- JUMPING ---
-   // only jump when standing on ground
-   // short interval so they get back up quickly
+    // --- JUMP ---
+    // jump every 2-3 seconds when on ground
     if (mIsOnGround) {
         mJumpTimer += deltaTime;
-
         if (mJumpTimer >= mJumpInterval) {
             mJumpTimer = 0.f;
-
-            // randomize next jump between 0.8 and 2 seconds
-            // short enough that they dont stay on ground too long
-            mJumpInterval = 0.3f + (rand() % 80) / 100.f;
-
-            // always jump — no condition needed
-            // random direction change on jump too
-            mMovingRight = (rand() % 2 == 0);
+            mJumpInterval = 2.f + (rand() % 100) / 100.f;
             mVelocityY = JUMP_FORCE;
             mIsOnGround = false;
         }
     }
 
-
     // --- GRAVITY ---
-    // enemy falls off platform edges naturally
-    // this is how they move between platforms — no jumping needed
+    // enemy falls off edges naturally
+    // this is how it moves between platforms
     applyGravity(deltaTime, platforms);
 
-    // sync visual position with hitbox
+    // sync visual
     mVisual.setPosition(mHitbox.getPosition());
 }
+
 // DRAW BOTTOM
 
 void Botom::draw(sf::RenderWindow& window, bool showHitbox) {
@@ -258,4 +226,280 @@ void Botom::draw(sf::RenderWindow& window, bool showHitbox) {
         debugBox.setOutlineThickness(2.f);
         window.draw(debugBox);
     }
+}
+
+int Botom::getPoints() const {
+    return 100;  // Botom always worth 100 points
+}
+
+//----Flying Enemy----------
+
+
+FlyingEnemy::FlyingEnemy(float x, float y)
+    : Botom(x, y),          // inherits everything from Botom
+    mFlying(false),
+    mFlightTimer(0.f),
+    mFlightInterval(4.f), // takes flight after 4 seconds on ground
+    mFlightDuration(3.f), // stays in flight for 3 seconds
+    mFlightSpeedX(0.f),
+    mFlightSpeedY(0.f) {
+
+    // override Botom's appearance
+    // slightly different color so player can distinguish
+    mOriginalColor = sf::Color(80, 180, 80); // green
+    mVisual.setFillColor(mOriginalColor);
+
+    // needs 3 hits to encase — harder than Botom
+    mHitsToEncase = 3;
+}
+
+void FlyingEnemy::update(float deltaTime,
+    const std::vector<Platform>& platforms) {
+
+    // rolling and melt handled same as Botom
+    if (mRolling) {
+        updateRolling(deltaTime, platforms);
+        return;
+    }
+
+    updateMelt(deltaTime);
+
+    if (mEncased) {
+        applyGravity(deltaTime, platforms);
+        mVisual.setPosition(mHitbox.getPosition());
+        return;
+    }
+
+    if (mSnowHits > 0) {
+        applyGravity(deltaTime, platforms);
+        mVisual.setPosition(mHitbox.getPosition());
+        return;
+    }
+
+    // count time in current state
+    mFlightTimer += deltaTime;
+
+    if (!mFlying) {
+        // --- GROUND STATE ---
+        // behaves exactly like Botom on ground
+        // call Botom's update for ground movement
+        Botom::update(deltaTime, platforms);
+
+        // after flight interval → take flight
+        if (mFlightTimer >= mFlightInterval) {
+            mFlying = true;
+            mFlightTimer = 0.f;
+
+            // pick a random flight direction in 8 directions
+            // -1, 0 or 1 for both x and y
+            int dirX = (rand() % 3) - 1; // -1, 0, or 1
+            int dirY = (rand() % 3) - 1; // -1, 0, or 1
+
+            // make sure it actually moves somewhere
+            if (dirX == 0 && dirY == 0) dirX = 1;
+
+            mFlightSpeedX = dirX * 180.f;
+            mFlightSpeedY = dirY * 180.f;
+        }
+    }
+    else {
+        // --- FLIGHT STATE ---
+        // moves freely ignoring gravity and platforms
+        mHitbox.move(mFlightSpeedX * deltaTime,
+            mFlightSpeedY * deltaTime);
+
+        // bounce off screen edges while flying
+        sf::Vector2f pos = mHitbox.getPosition();
+
+        if (pos.x < 0.f) {
+            mHitbox.setPosition(0.f, pos.y);
+            mFlightSpeedX = -mFlightSpeedX; // reverse X
+        }
+        if (pos.x + mHitbox.getSize().x > 800.f) {
+            mHitbox.setPosition(800.f - mHitbox.getSize().x, pos.y);
+            mFlightSpeedX = -mFlightSpeedX;
+        }
+        if (pos.y < 0.f) {
+            mHitbox.setPosition(pos.x, 0.f);
+            mFlightSpeedY = -mFlightSpeedY; // reverse Y
+        }
+        if (pos.y + mHitbox.getSize().y > 550.f) {
+            mHitbox.setPosition(pos.x, 550.f - mHitbox.getSize().y);
+            mFlightSpeedY = -mFlightSpeedY;
+        }
+
+        // after flight duration → return to ground
+        if (mFlightTimer >= mFlightDuration) {
+            mFlying = false;
+            mFlightTimer = 0.f;
+            mVelocityY = 0.f;
+
+            // pick new random flight interval 3-6 seconds
+            mFlightInterval = 3.f + (rand() % 300) / 100.f;
+        }
+
+        mVisual.setPosition(mHitbox.getPosition());
+    }
+}
+
+void FlyingEnemy::draw(sf::RenderWindow& window, bool showHitbox) {
+
+    // draw visual
+    window.draw(mVisual);
+
+    // draw hitbox in debug mode
+    if (showHitbox) {
+        sf::RectangleShape debugBox;
+        debugBox.setPosition(mHitbox.getPosition());
+        debugBox.setSize(mHitbox.getSize());
+        debugBox.setFillColor(sf::Color::Transparent);
+        debugBox.setOutlineColor(sf::Color::Red);
+        debugBox.setOutlineThickness(2.f);
+        window.draw(debugBox);
+    }
+}
+
+int FlyingEnemy::getPoints() const {
+    return 200; // worth more than Botom
+}
+
+
+// --- TORNADO ---
+
+Tornado::Tornado(float x, float y)
+    : FlyingEnemy(x, y),
+    mKnifeActive(false),
+    mKnifeSpeed(350.f),
+    mKnifeTimer(0.f),
+    mKnifeInterval(3.f) {
+
+    // override appearance — purple color
+    mOriginalColor = sf::Color(180, 80, 220);
+    mVisual.setFillColor(mOriginalColor);
+
+    // harder to encase — needs 4 hits
+    mHitsToEncase = 4;
+
+    // faster flight than FlyingEnemy
+    mFlightInterval = 2.f;   // takes flight every 2 seconds
+    mFlightDuration = 4.f;   // stays in flight longer
+    // flight speed set when taking flight
+
+    // knife visual — small yellow rectangle
+    mKnifeVisual.setSize(sf::Vector2f(15.f, 6.f));
+    mKnifeVisual.setFillColor(sf::Color::Yellow);
+}
+
+void Tornado::setNearestPlayerPos(sf::Vector2f pos) {
+    mNearestPlayerPos = pos;
+}
+
+void Tornado::update(float deltaTime,
+    const std::vector<Platform>& platforms) {
+
+    if (mRolling) {
+        updateRolling(deltaTime, platforms);
+        return;
+    }
+
+    updateMelt(deltaTime);
+
+    if (mEncased) {
+        applyGravity(deltaTime, platforms);
+        mVisual.setPosition(mHitbox.getPosition());
+        return;
+    }
+
+    if (mSnowHits > 0) {
+        applyGravity(deltaTime, platforms);
+        mVisual.setPosition(mHitbox.getPosition());
+        return;
+    }
+
+    // call FlyingEnemy update for movement
+    FlyingEnemy::update(deltaTime, platforms);
+
+    // --- KNIFE THROWING ---
+    mKnifeTimer += deltaTime;
+
+    if (mKnifeTimer >= mKnifeInterval && !mKnifeActive) {
+        mKnifeTimer = 0.f;
+
+        // calculate direction toward nearest player
+        sf::Vector2f myPos = mHitbox.getPosition();
+        sf::Vector2f diff = mNearestPlayerPos - myPos;
+
+        // normalize direction — make it length 1
+        // so speed is consistent regardless of distance
+        float length = sqrt(diff.x * diff.x + diff.y * diff.y);
+        if (length > 0) {
+            mKnifeDirection = sf::Vector2f(
+                diff.x / length,
+                diff.y / length);
+        }
+
+        // spawn knife at Tornado center position
+        mKnifeVisual.setPosition(
+            myPos.x + mHitbox.getSize().x / 2.f,
+            myPos.y + mHitbox.getSize().y / 2.f);
+
+        mKnifeActive = true;
+    }
+
+    // --- KNIFE MOVEMENT ---
+    if (mKnifeActive) {
+        mKnifeVisual.move(
+            mKnifeDirection.x * mKnifeSpeed * deltaTime,
+            mKnifeDirection.y * mKnifeSpeed * deltaTime);
+
+        // deactivate knife when off screen
+        sf::Vector2f kPos = mKnifeVisual.getPosition();
+        if (kPos.x < -20.f || kPos.x > 820.f ||
+            kPos.y < -20.f || kPos.y > 620.f)
+            mKnifeActive = false;
+    }
+}
+
+void Tornado::draw(sf::RenderWindow& window, bool showHitbox) {
+
+    // draw tornado visual
+    window.draw(mVisual);
+
+    // draw knife if active
+    if (mKnifeActive)
+        window.draw(mKnifeVisual);
+
+    // debug hitboxes
+    if (showHitbox) {
+        sf::RectangleShape debugBox;
+        debugBox.setPosition(mHitbox.getPosition());
+        debugBox.setSize(mHitbox.getSize());
+        debugBox.setFillColor(sf::Color::Transparent);
+        debugBox.setOutlineColor(sf::Color::Red);
+        debugBox.setOutlineThickness(2.f);
+        window.draw(debugBox);
+
+        // show knife hitbox too
+        if (mKnifeActive) {
+            sf::RectangleShape knifeDebug;
+            knifeDebug.setPosition(mKnifeVisual.getPosition());
+            knifeDebug.setSize(mKnifeVisual.getSize());
+            knifeDebug.setFillColor(sf::Color::Transparent);
+            knifeDebug.setOutlineColor(sf::Color::Yellow);
+            knifeDebug.setOutlineThickness(2.f);
+            window.draw(knifeDebug);
+        }
+    }
+}
+
+int Tornado::getPoints() const {
+    return 350;
+}
+
+sf::FloatRect Tornado::getKnifeBounds() const {
+    return mKnifeVisual.getGlobalBounds();
+}
+
+bool Tornado::isKnifeActive() const {
+    return mKnifeActive;
 }

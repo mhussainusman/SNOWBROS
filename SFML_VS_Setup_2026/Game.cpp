@@ -2,25 +2,44 @@
 
 Game::Game()
     : mWindow(sf::VideoMode(800, 600), "Snow Bros", sf::Style::Close),
-    mPlayer1(0),   // player 1
-    mPlayer2(1),   // player 2
-    mShowHitboxes(false) {
+    mPlayer1(0),
+    mPlayer2(1),
+    mShowHitboxes(false),
+    mGameOver(false),
+    mScore1(0),
+    mScore2(0) {
 
     mWindow.setFramerateLimit(60);
 
-    // temporary test platforms
+    // ground — full width, enemies always land here
     mPlatforms.push_back(Platform(0.f, 550.f, 800.f, 20.f));
-    mPlatforms.push_back(Platform(50.f, 440.f, 180.f, 20.f));
-    mPlatforms.push_back(Platform(550.f, 420.f, 180.f, 20.f));
-    mPlatforms.push_back(Platform(250.f, 330.f, 180.f, 20.f));
-    mPlatforms.push_back(Platform(100.f, 220.f, 170.f, 20.f));
-    mPlatforms.push_back(Platform(430.f, 200.f, 170.f, 20.f));
-    mPlatforms.push_back(Platform(250.f, 110.f, 200.f, 20.f));
+
+    // level 2 — full width minus small gaps on each side
+    // enemy walks full width, falls off either side to ground
+    mPlatforms.push_back(Platform(80.f, 430.f, 640.f, 20.f));
+
+    // level 3 — offset right
+    // enemy falls off left side to ground, right side to level 2
+    mPlatforms.push_back(Platform(200.f, 320.f, 600.f, 20.f));
+
+    // level 4 — offset left
+    // enemy falls off right side to level 3, left side down
+    mPlatforms.push_back(Platform(0.f, 210.f, 600.f, 20.f));
+
+    // top — centered, shorter
+    // enemy falls off both sides to level 4
+    mPlatforms.push_back(Platform(150.f, 110.f, 500.f, 20.f));
 
     // test enemies
-    mEnemies.push_back(new Botom(200.f, 50.f));
-    mEnemies.push_back(new Botom(500.f, 50.f));
-    mEnemies.push_back(new Botom(350.f, 50.f));
+    mEnemies.push_back(new Botom(100.f, 480.f));
+    mEnemies.push_back(new Botom(600.f, 360.f));
+    mEnemies.push_back(new Botom(300.f, 240.f));
+
+    mEnemies.push_back(new FlyingEnemy(400.f, 300.f));
+
+	mEnemies.push_back(new Tornado(400.f, 100.f));
+
+
 }
 
 void Game::run() {
@@ -38,45 +57,49 @@ void Game::processEvents() {
     while (mWindow.pollEvent(event)) {
         if (event.type == sf::Event::Closed)
             mWindow.close();
+
         if (event.type == sf::Event::KeyPressed) {
             if (event.key.code == sf::Keyboard::Escape)
                 mWindow.close();
-            if (event.key.code == sf::Keyboard::H)
-                mShowHitboxes = !mShowHitboxes;
+
+            if (!mGameOver) {
+                if (event.key.code == sf::Keyboard::H)
+                    mShowHitboxes = !mShowHitboxes;
+            }
         }
     }
 }
 
 void Game::update(float deltaTime) {
 
+    // stop everything if game is over
+    if (mGameOver) return;
+
     // update both players
     mPlayer1.update(deltaTime, mPlatforms);
     mPlayer2.update(deltaTime, mPlatforms);
 
-    // check if player 1 wants to throw
+    // player 1 throw
     if (mPlayer1.wantsToThrow()) {
-        // spawn snowball at player 1 position
         sf::Vector2f pos = mPlayer1.getPosition();
         float snowX = mPlayer1.isFacingRight() ?
-            pos.x + 40.f :  // right side of player
-            pos.x - 20.f;   // left side of player
-        float snowY = pos.y + 17.f; // middle height of player
+            pos.x + 40.f : pos.x - 20.f;
+        float snowY = pos.y + 17.f;
         mSnowballs.push_back(Snowball(snowX, snowY,
             mPlayer1.isFacingRight(), 0));
     }
 
-    // check if player 2 wants to throw
+    // player 2 throw
     if (mPlayer2.wantsToThrow()) {
         sf::Vector2f pos = mPlayer2.getPosition();
         float snowX = mPlayer2.isFacingRight() ?
-            pos.x + 40.f :
-            pos.x - 20.f;
+            pos.x + 40.f : pos.x - 20.f;
         float snowY = pos.y + 17.f;
         mSnowballs.push_back(Snowball(snowX, snowY,
             mPlayer2.isFacingRight(), 1));
     }
 
-    // update all active snowballs
+    // update snowballs
     for (int i = 0; i < mSnowballs.size(); i++)
         mSnowballs[i].update(deltaTime);
 
@@ -86,17 +109,15 @@ void Game::update(float deltaTime) {
             mSnowballs.erase(mSnowballs.begin() + i);
     }
 
-    // update all enemies
+    // update enemies
     for (int i = 0; i < mEnemies.size(); i++)
         mEnemies[i]->update(deltaTime, mPlatforms);
 
-    // check snowball hits on enemies
+    // collision checks
     checkSnowballEnemyCollision();
-
-    // check player touching enemies
     checkPlayerEnemyCollision();
-    
     checkRollingEnemyCollision();
+    checkKnifePlayerCollision();
 
     // remove dead enemies
     for (int i = mEnemies.size() - 1; i >= 0; i--) {
@@ -105,29 +126,21 @@ void Game::update(float deltaTime) {
             mEnemies.erase(mEnemies.begin() + i);
         }
     }
+
+    // game over when both players out of lives
+    if (!mPlayer1.isAlive() && !mPlayer2.isAlive())
+        mGameOver = true;
 }
 
 void Game::checkSnowballEnemyCollision() {
-
     for (int i = 0; i < mSnowballs.size(); i++) {
-
-        // skip already expired snowballs
-        if (mSnowballs[i].isExpired())
-            continue;
+        if (mSnowballs[i].isExpired()) continue;
 
         for (int j = 0; j < mEnemies.size(); j++) {
-
-            // check if snowball hitbox overlaps enemy hitbox
             if (mSnowballs[i].getBounds().intersects(
                 mEnemies[j]->getBounds())) {
-
-                // apply snow damage to enemy
                 mEnemies[j]->takeDamage();
-
-                // remove snowball
                 mSnowballs[i].setExpired();
-
-                // move to next snowball
                 break;
             }
         }
@@ -135,89 +148,139 @@ void Game::checkSnowballEnemyCollision() {
 }
 
 void Game::checkPlayerEnemyCollision() {
-
     for (int i = 0; i < mEnemies.size(); i++) {
 
-        // --- PLAYER 1 vs ENEMY ---
-        if (mPlayer1.getBounds().intersects(mEnemies[i]->getBounds())) {
-
-            // if enemy fully encased and player presses kick
-            if (mEnemies[i]->isFullyEncased() &&
-                sf::Keyboard::isKeyPressed(sf::Keyboard::Down)) {
+        // handle encased enemies — kick only
+        if (mEnemies[i]->isFullyEncased()) {
+            if (mPlayer1.isAlive() &&
+                mPlayer1.getBounds().intersects(
+                    mEnemies[i]->getBounds()) &&
+                sf::Keyboard::isKeyPressed(sf::Keyboard::Down))
                 mEnemies[i]->startRolling(mPlayer1.isFacingRight());
-            }
 
-            // player touching normal enemy = lose life
-            // we will add life loss logic later
+            if (mPlayer2.isAlive() &&
+                mPlayer2.getBounds().intersects(
+                    mEnemies[i]->getBounds()) &&
+                sf::Keyboard::isKeyPressed(sf::Keyboard::S))
+                mEnemies[i]->startRolling(mPlayer2.isFacingRight());
+
+            continue; // skip life loss for encased enemies
         }
 
-        // --- PLAYER 2 vs ENEMY ---
-        if (mPlayer2.getBounds().intersects(mEnemies[i]->getBounds())) {
+        // skip rolling enemies
+        if (mEnemies[i]->isRolling()) continue;
 
-            if (mEnemies[i]->isFullyEncased() &&
-                sf::Keyboard::isKeyPressed(sf::Keyboard::S)) {
-                mEnemies[i]->startRolling(mPlayer2.isFacingRight());
+        // normal enemy touches player — lose life
+        // isRespawning check prevents losing life during invincibility
+
+        if (mEnemies[i]->isPartiallyEncased()) continue;
+
+
+        if (mPlayer1.isAlive() &&
+            !mPlayer1.isRespawning() &&
+            mPlayer1.getBounds().intersects(mEnemies[i]->getBounds()))
+            mPlayer1.loseLife();
+
+        if (mPlayer2.isAlive() &&
+            !mPlayer2.isRespawning() &&
+            mPlayer2.getBounds().intersects(mEnemies[i]->getBounds())
+            )
+        {mPlayer2.loseLife();}
+    }
+}
+
+void Game::checkRollingEnemyCollision() {
+    for (int i = 0; i < mEnemies.size(); i++) {
+        if (!mEnemies[i]->isRolling()) continue;
+
+        for (int j = 0; j < mEnemies.size(); j++) {
+            if (i == j) continue;
+            if (mEnemies[j]->isRolling()) continue;
+            if (mEnemies[j]->isDead()) continue;
+
+            if (!mEnemies[i]->getBounds().intersects(
+                mEnemies[j]->getBounds())) continue;
+
+            if (mEnemies[j]->isFullyEncased())
+                mEnemies[j]->startRolling(mEnemies[i]->isRollingRight());
+            else {
+                mScore1 += mEnemies[j]->getPoints();
+                mEnemies[j]->setDead();
             }
-
-            // player touching normal enemy = lose life
-            // we will add life loss logic later
         }
     }
 }
 
 void Game::render() {
+    // black screen when game over
+    if (mGameOver) {
+        mWindow.clear(sf::Color::Black);
+        mWindow.display();
+        return;
+    }
+
     mWindow.clear(sf::Color(30, 30, 50));
 
-    // draw platforms
     for (int i = 0; i < mPlatforms.size(); i++)
         mPlatforms[i].draw(mWindow, mShowHitboxes);
 
-    // draw enemies
     for (int i = 0; i < mEnemies.size(); i++)
         mEnemies[i]->draw(mWindow, mShowHitboxes);
 
-    // draw snowballs
     for (int i = 0; i < mSnowballs.size(); i++)
         mSnowballs[i].draw(mWindow, mShowHitboxes);
 
-    // draw players on top of everything
     mPlayer1.draw(mWindow, mShowHitboxes);
     mPlayer2.draw(mWindow, mShowHitboxes);
 
     mWindow.display();
 }
 
-void Game::checkRollingEnemyCollision() {
-
+void Game::checkKnifePlayerCollision() {
     for (int i = 0; i < mEnemies.size(); i++) {
 
-        // only care about rolling enemies
-        if (!mEnemies[i]->isRolling()) continue;
+        // cast to Tornado to access knife
+        // dynamic_cast returns nullptr if not a Tornado
+        Tornado* tornado = dynamic_cast<Tornado*>(mEnemies[i]);
+        if (tornado == nullptr) continue;
+        if (!tornado->isKnifeActive()) continue;
 
-        for (int j = 0; j < mEnemies.size(); j++) {
+        // pass nearest player position to tornado
+        // find which player is closer
+        sf::Vector2f p1 = mPlayer1.getPosition();
+        sf::Vector2f p2 = mPlayer2.getPosition();
+        sf::Vector2f tPos = tornado->getKnifeBounds().left == 0 ?
+            sf::Vector2f(0, 0) : sf::Vector2f(
+                tornado->getKnifeBounds().left,
+                tornado->getKnifeBounds().top);
 
-            // dont check enemy against itself
-            if (i == j) continue;
+        // calculate distance to each player
+        float dist1 = sqrt(
+            (p1.x - tPos.x) * (p1.x - tPos.x) +
+            (p1.y - tPos.y) * (p1.y - tPos.y));
+        float dist2 = sqrt(
+            (p2.x - tPos.x) * (p2.x - tPos.x) +
+            (p2.y - tPos.y) * (p2.y - tPos.y));
 
-            // skip enemies that are already rolling or dead
-            if (mEnemies[j]->isRolling()) continue;
-            if (mEnemies[j]->isDead()) continue;
+        // tell tornado which player is nearest
+        if (mPlayer1.isAlive() && mPlayer2.isAlive())
+            tornado->setNearestPlayerPos(dist1 < dist2 ? p1 : p2);
+        else if (mPlayer1.isAlive())
+            tornado->setNearestPlayerPos(p1);
+        else if (mPlayer2.isAlive())
+            tornado->setNearestPlayerPos(p2);
 
-            // check if rolling enemy overlaps this enemy
-            if (!mEnemies[i]->getBounds().intersects(
-                mEnemies[j]->getBounds()))
-                continue;
+        // check knife collision with players
+        if (mPlayer1.isAlive() &&
+            !mPlayer1.isRespawning() &&
+            tornado->getKnifeBounds().intersects(
+                mPlayer1.getBounds()))
+            mPlayer1.loseLife();
 
-            // collision happened
-            if (mEnemies[j]->isFullyEncased()) {
-                // encased enemy joins the roll
-                // rolls in same direction as the rolling snowball
-                mEnemies[j]->startRolling(mEnemies[i]->isRollingRight());
-            }
-            else {
-                // normal enemy hit by rolling snowball → dies instantly
-                mEnemies[j]->setDead();
-            }
-        }
+        if (mPlayer2.isAlive() &&
+            !mPlayer2.isRespawning() &&
+            tornado->getKnifeBounds().intersects(
+                mPlayer2.getBounds()))
+            mPlayer2.loseLife();
     }
 }
