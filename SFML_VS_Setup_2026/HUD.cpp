@@ -1,0 +1,95 @@
+#include "HUD.h"
+
+HUD::HUD() {
+    // font loaded separately via loadFont()
+}
+
+bool HUD::loadFont(const std::string& fontPath) {
+    if (!mFont.loadFromFile(fontPath)) {
+        return false; // font failed to load
+    }
+
+    // setup all text objects after font is loaded
+
+    // player 1 label — top left
+    setupText(mP1Label, 12, sf::Color::Cyan, 10.f, 8.f);
+    mP1Label.setString("1P");
+
+    // player 1 score — below label
+    setupText(mScore1Text, 14, sf::Color::White, 10.f, 25.f);
+    mScore1Text.setString("000000");
+
+    // player 1 lives — below score
+    setupText(mLives1Text, 12, sf::Color::Yellow, 10.f, 45.f);
+    mLives1Text.setString("LIFE: 0");
+
+    // player 2 label — top right
+    setupText(mP2Label, 12, sf::Color::Cyan, 710.f, 8.f);
+    mP2Label.setString("2P");
+
+    // player 2 score — below label
+    setupText(mScore2Text, 14, sf::Color::White, 710.f, 25.f);
+    mScore2Text.setString("000000");
+
+    // player 2 lives — below score
+    setupText(mLives2Text, 12, sf::Color::Yellow, 710.f, 45.f);
+    mLives2Text.setString("LIFE: 0");
+
+    // level indicator — top center
+    setupText(mLevelText, 12, sf::Color::Green, 360.f, 27.f);
+    mLevelText.setString("LEVEL 1");
+
+    return true;
+}
+
+void HUD::setupText(sf::Text& text, int size,
+    sf::Color color, float x, float y) {
+    text.setFont(mFont);
+    text.setCharacterSize(size);
+    text.setFillColor(color);
+    text.setPosition(x, y);
+}
+
+void HUD::update(int score1, int lives1,
+    int score2, int lives2,
+    int level) {
+
+    // update score — pad with zeros to 6 digits
+    // like original arcade game display
+    std::string s1 = std::to_string(score1);
+    while (s1.size() < 6) s1 = "0" + s1; // pad left with zeros
+    mScore1Text.setString(s1);
+
+    std::string s2 = std::to_string(score2);
+    while (s2.size() < 6) s2 = "0" + s2;
+    mScore2Text.setString(s2);
+
+    // update lives — show mLives - 1 as extra lives
+    // because 3 total = 2 shown in HUD
+    int extraLives1 = lives1 - 1;
+    if (extraLives1 < 0) extraLives1 = 0;
+    mLives1Text.setString("LIFE: " +
+        std::to_string(extraLives1));
+
+    int extraLives2 = lives2 - 1;
+    if (extraLives2 < 0) extraLives2 = 0;
+    mLives2Text.setString("LIFE: " +
+        std::to_string(extraLives2));
+
+    // update level
+    mLevelText.setString("LEVEL " +
+        std::to_string(level));
+}
+
+void HUD::draw(sf::RenderWindow& window) {
+
+
+    // draw all text
+    window.draw(mP1Label);
+    window.draw(mScore1Text);
+    window.draw(mLives1Text);
+    window.draw(mP2Label);
+    window.draw(mScore2Text);
+    window.draw(mLives2Text);
+    window.draw(mLevelText);
+}

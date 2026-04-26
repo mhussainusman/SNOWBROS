@@ -1,34 +1,39 @@
 #include "Game.h"
 
 Game::Game()
-    : mWindow(sf::VideoMode(800, 600), "Snow Bros", sf::Style::Close),
+    : mWindow(sf::VideoMode(800, 660), "Snow Bros", sf::Style::Close),
     mPlayer1(0),
     mPlayer2(1),
     mShowHitboxes(false),
     mGameOver(false),
     mScore1(0),
-    mScore2(0) {
+    mScore2(0),
+    mCurrentLevel(1)
+    {
 
     mWindow.setFramerateLimit(60);
 
     // ground — full width, enemies always land here
-    mPlatforms.push_back(Platform(0.f, 550.f, 800.f, 20.f));
+    mPlatforms.push_back(Platform(0.f, 615, 800.f, 20.f));
 
     // level 2 — full width minus small gaps on each side
     // enemy walks full width, falls off either side to ground
-    mPlatforms.push_back(Platform(80.f, 430.f, 640.f, 20.f));
+    mPlatforms.push_back(Platform(80.f, 495.f, 640.f, 20.f));
 
     // level 3 — offset right
     // enemy falls off left side to ground, right side to level 2
-    mPlatforms.push_back(Platform(200.f, 320.f, 600.f, 20.f));
+    mPlatforms.push_back(Platform(200.f, 385.f, 600.f, 20.f));
 
     // level 4 — offset left
     // enemy falls off right side to level 3, left side down
-    mPlatforms.push_back(Platform(0.f, 210.f, 600.f, 20.f));
+    mPlatforms.push_back(Platform(0.f, 275.f, 600.f, 20.f));
 
     // top — centered, shorter
     // enemy falls off both sides to level 4
-    mPlatforms.push_back(Platform(150.f, 110.f, 500.f, 20.f));
+    mPlatforms.push_back(Platform(150.f, 185.f, 500.f, 20.f));
+
+    mHUD.loadFont("assets/Fonts/ps2.ttf");
+
 
     // test enemies
     mEnemies.push_back(new Botom(100.f, 480.f));
@@ -126,6 +131,11 @@ void Game::update(float deltaTime) {
             mEnemies.erase(mEnemies.begin() + i);
         }
     }
+
+    // update HUD ← ADD HERE
+    mHUD.update(mScore1, mPlayer1.getLives(),
+        mScore2, mPlayer2.getLives(),
+        mCurrentLevel);
 
     // game over when both players out of lives
     if (!mPlayer1.isAlive() && !mPlayer2.isAlive())
@@ -232,6 +242,8 @@ void Game::render() {
 
     mPlayer1.draw(mWindow, mShowHitboxes);
     mPlayer2.draw(mWindow, mShowHitboxes);
+
+    mHUD.draw(mWindow);
 
     mWindow.display();
 }

@@ -5,6 +5,7 @@
 #include "Platform.h"
 #include"Enemy.h"
 #include "Snowball.h"
+#include"HUD.h"
 using namespace std;
 // Game: owns the window, runs the game loop
 class Game {
@@ -37,6 +38,8 @@ private:
     int mScore2;
     bool mGameOver;
 
+    HUD mHUD;
+    int mCurrentLevel;
 
 
 };
