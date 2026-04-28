@@ -36,7 +36,7 @@ Player::Player(int playerIndex)
 }
 
 void Player::update(float deltaTime,
-    const std::vector<Platform>& platforms) {
+    const Platform* platforms,int platformCount) {
 
     // if no lives left stop updating completely
     if (mLives <= 0) return;
@@ -95,7 +95,7 @@ void Player::update(float deltaTime,
     mVisual.move(0.f, mVelocityY * deltaTime);
 
     // platform collision
-    handleCollision(platforms);
+    handleCollision(platforms, platformCount);
 
     // screen edges
     sf::Vector2f pos = mHitbox.getPosition();
@@ -173,10 +173,10 @@ bool Player::isRespawning() const {
     return mRespawning;
 }
 
-void Player::handleCollision(const std::vector<Platform>& platforms) {
+void Player::handleCollision(const Platform* platforms, int platformCount) {
     mIsOnGround = false;
 
-    for (int i = 0; i < platforms.size(); i++) {
+    for (int i = 0; i < platformCount; i++) {
         sf::FloatRect player = mHitbox.getGlobalBounds();
         sf::FloatRect plat = platforms[i].getBounds();
 

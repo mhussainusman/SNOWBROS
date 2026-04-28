@@ -5,6 +5,7 @@
 class Platform {
 public:
     Platform(float x, float y, float width, float height);
+    Platform(){}
 
     // showHitbox: when true draws blue outline showing collision area
     void draw(sf::RenderWindow& window, bool showHitbox);

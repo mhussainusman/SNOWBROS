@@ -1,6 +1,5 @@
 #pragma once
 #include <SFML/Graphics.hpp>
-#include <vector>
 #include "Platform.h"
 
 // Player: handles movement, gravity, jumping and collision
@@ -9,7 +8,7 @@ public:
 
     Player(int playerIndex);// 0: player 1, 1: player 2
 
-    void update(float deltaTime, const std::vector<Platform>& platforms);
+    void update(float deltaTime, const Platform* platforms, int platformCount);
 
     // showHitbox: when true draws green outline showing collision area
     void draw(sf::RenderWindow& window, bool showHitbox);
@@ -30,7 +29,7 @@ public:
   
 
 private:
-    void handleCollision(const std::vector<Platform>& platforms);
+    void handleCollision(const Platform* platforms, int platformCount);
 
     sf::RectangleShape mHitbox;   // collision box
     sf::RectangleShape mVisual;   // placeholder visual, replaced with sprite later

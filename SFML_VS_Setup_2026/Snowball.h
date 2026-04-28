@@ -9,6 +9,7 @@ public:
     // movingRight = direction it travels
     // playerIndex = which player threw it (0 = player1, 1 = player2)
     Snowball(float x, float y, bool movingRight, int playerIndex);
+	Snowball() {}
 
     void update(float deltaTime);
     void draw(sf::RenderWindow& window, bool showHitbox);

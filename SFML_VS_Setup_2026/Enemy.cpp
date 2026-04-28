@@ -12,7 +12,9 @@ Enemy::Enemy(float x, float y, int hitsToEncase)
     mRollSpeed(300.f),
     mRollingRight(true),
     mMeltTimer(0.f),
-    mMeltTime(0.f) {
+    mMeltTime(0.f),
+    mKickedByPlayer(0) {
+
     mHitbox.setPosition(x, y);
     mHitbox.setFillColor(sf::Color::Transparent);
     mVisual.setPosition(x, y);
@@ -48,10 +50,11 @@ sf::FloatRect Enemy::getBounds() const {
     return mHitbox.getGlobalBounds();
 }
 
-void Enemy::startRolling(bool kickedRight) {
+void Enemy::startRolling(bool kickedRight, int playerIndex) {
     mRolling = true;
     mRollingRight = kickedRight;
     mMeltTimer = 0.f;
+    mKickedByPlayer = playerIndex;
 }
 
 void Enemy::updateMelt(float deltaTime) {
@@ -67,7 +70,7 @@ void Enemy::updateMelt(float deltaTime) {
     }
 }
 
-void Enemy::updateRolling(float deltaTime, const std::vector<Platform>& platforms) {
+void Enemy::updateRolling(float deltaTime, const Platform* platforms, int platformCount) {
     float moveX = mRollingRight ? mRollSpeed : -mRollSpeed;
     mHitbox.move(moveX * deltaTime, 0.f);
     mVisual.move(moveX * deltaTime, 0.f);
@@ -79,7 +82,7 @@ void Enemy::updateRolling(float deltaTime, const std::vector<Platform>& platform
     mHitbox.move(0.f, mVelocityY * deltaTime);
     mVisual.move(0.f, mVelocityY * deltaTime);
 
-    for (int i = 0; i < platforms.size(); i++) {
+    for (int i = 0; i < platformCount; i++) {
         sf::FloatRect enemy = mHitbox.getGlobalBounds();
         sf::FloatRect plat = platforms[i].getBounds();
         if (!enemy.intersects(plat)) continue;
@@ -97,7 +100,7 @@ void Enemy::updateRolling(float deltaTime, const std::vector<Platform>& platform
         mDead = true;
 }
 
-void Enemy::applyGravity(float deltaTime, const std::vector<Platform>& platforms) {
+void Enemy::applyGravity(float deltaTime, const Platform* platforms, int platformCount) {
     mIsOnGround = false;
 
     mVelocityY += GRAVITY * deltaTime;
@@ -107,7 +110,7 @@ void Enemy::applyGravity(float deltaTime, const std::vector<Platform>& platforms
     mHitbox.move(0.f, mVelocityY * deltaTime);
     mVisual.move(0.f, mVelocityY * deltaTime);
 
-    for (int i = 0; i < platforms.size(); i++) {
+    for (int i = 0; i < platformCount; i++) {
         sf::FloatRect enemy = mHitbox.getGlobalBounds();
         sf::FloatRect plat = platforms[i].getBounds();
         if (!enemy.intersects(plat)) continue;
@@ -127,6 +130,7 @@ bool Enemy::isRollingRight() const { return mRollingRight; }
 void Enemy::setDead() { mDead = true; }
 bool Enemy::isPartiallyEncased() const { return mSnowHits > 0 && !mEncased; }
 
+int Enemy::getKickedByPlayer() const { return mKickedByPlayer; }
 
 // --- BOTOM ---
 
@@ -134,8 +138,6 @@ Botom::Botom(float x, float y)
     : Enemy(x, y, 2),
     mMoveSpeed(130.f),
     mMovingRight(rand() % 2),
-    mDirectionTimer(0.f),
-    mDirectionInterval(2.f),
     mJumpTimer(0.f),
     mJumpInterval(1.5f)
     {
@@ -152,23 +154,23 @@ Botom::Botom(float x, float y)
 }
 
 void Botom::update(float deltaTime,
-    const std::vector<Platform>& platforms) {
+    const Platform* platforms, int platformCount) {
 
     if (mRolling) {
-        updateRolling(deltaTime, platforms);
+        updateRolling(deltaTime, platforms, platformCount);
         return;
     }
 
     updateMelt(deltaTime);
 
     if (mEncased) {
-        applyGravity(deltaTime, platforms);
+        applyGravity(deltaTime, platforms, platformCount);
         mVisual.setPosition(mHitbox.getPosition());
         return;
     }
 
     if (mSnowHits > 0) {
-        applyGravity(deltaTime, platforms);
+        applyGravity(deltaTime, platforms, platformCount);
         mVisual.setPosition(mHitbox.getPosition());
         return;
     }
@@ -206,7 +208,7 @@ void Botom::update(float deltaTime,
     // --- GRAVITY ---
     // enemy falls off edges naturally
     // this is how it moves between platforms
-    applyGravity(deltaTime, platforms);
+    applyGravity(deltaTime, platforms, platformCount);
 
     // sync visual
     mVisual.setPosition(mHitbox.getPosition());
@@ -254,24 +256,24 @@ FlyingEnemy::FlyingEnemy(float x, float y)
 }
 
 void FlyingEnemy::update(float deltaTime,
-    const std::vector<Platform>& platforms) {
+    const Platform* platforms, int platformCount) {
 
     // rolling and melt handled same as Botom
     if (mRolling) {
-        updateRolling(deltaTime, platforms);
+        updateRolling(deltaTime, platforms, platformCount);
         return;
     }
 
     updateMelt(deltaTime);
 
     if (mEncased) {
-        applyGravity(deltaTime, platforms);
+        applyGravity(deltaTime, platforms, platformCount);
         mVisual.setPosition(mHitbox.getPosition());
         return;
     }
 
     if (mSnowHits > 0) {
-        applyGravity(deltaTime, platforms);
+        applyGravity(deltaTime, platforms, platformCount);
         mVisual.setPosition(mHitbox.getPosition());
         return;
     }
@@ -283,7 +285,7 @@ void FlyingEnemy::update(float deltaTime,
         // --- GROUND STATE ---
         // behaves exactly like Botom on ground
         // call Botom's update for ground movement
-        Botom::update(deltaTime, platforms);
+        Botom::update(deltaTime, platforms, platformCount);
 
         // after flight interval → take flight
         if (mFlightTimer >= mFlightInterval) {
@@ -395,29 +397,29 @@ void Tornado::setNearestPlayerPos(sf::Vector2f pos) {
 }
 
 void Tornado::update(float deltaTime,
-    const std::vector<Platform>& platforms) {
+    const Platform* platforms, int platformCount) {
 
     if (mRolling) {
-        updateRolling(deltaTime, platforms);
+        updateRolling(deltaTime, platforms, platformCount);
         return;
     }
 
     updateMelt(deltaTime);
 
     if (mEncased) {
-        applyGravity(deltaTime, platforms);
+        applyGravity(deltaTime, platforms, platformCount);
         mVisual.setPosition(mHitbox.getPosition());
         return;
     }
 
     if (mSnowHits > 0) {
-        applyGravity(deltaTime, platforms);
+        applyGravity(deltaTime, platforms, platformCount);
         mVisual.setPosition(mHitbox.getPosition());
         return;
     }
 
     // call FlyingEnemy update for movement
-    FlyingEnemy::update(deltaTime, platforms);
+    FlyingEnemy::update(deltaTime, platforms, platformCount);
 
     // --- KNIFE THROWING ---
     mKnifeTimer += deltaTime;

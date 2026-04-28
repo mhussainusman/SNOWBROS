@@ -1,6 +1,5 @@
 #pragma once
 #include <SFML/Graphics.hpp>
-#include <vector>
 #include "Platform.h"
 
 // Enemy: abstract base class
@@ -14,7 +13,7 @@ public:
     Enemy(float x, float y, int hitsToEncase);
 
     // pure virtual: every enemy must write their own version
-    virtual void update(float deltaTime, const std::vector<Platform>& platforms) = 0;
+    virtual void update(float deltaTime, const Platform* platforms, int platformCount) = 0;
     // draw: second parameter indicates         whether to render hitboxes for debugging
     virtual void draw(sf::RenderWindow& window, bool showHitbox) = 0;
 
@@ -29,10 +28,10 @@ public:
 
     void updateMelt(float deltaTime);
     // called when player stands next to encased enemy and presses kick button
-    void startRolling(bool kickedRight);
+    void startRolling(bool kickedRight, int playerIndex=0);
 
     // handles rolling movement every frame
-    void updateRolling(float deltaTime, const std::vector<Platform>& platforms);
+    void updateRolling(float deltaTime, const Platform* platforms, int platformCount);
 
     bool isRollingRight() const; // returns which direction rolling
     void setDead();              // instantly kills this enemy
@@ -41,6 +40,7 @@ public:
 
     bool isPartiallyEncased() const; // true when hit once but not fully encased
 
+    int getKickedByPlayer() const;
 
 protected:
 
@@ -72,7 +72,10 @@ protected:
     const float MAX_FALL_SPEED = 600.f;
 
     // gravity and platform landing — shared by all enemies
-    void applyGravity(float deltaTime, const std::vector<Platform>& platforms);
+  
+  void applyGravity(float deltaTime, const Platform* platforms, int platformCount);
+  int mKickedByPlayer;
+
 };
 
 
@@ -84,7 +87,7 @@ public:
     Botom(float x, float y);
 
     // overriding pure virtual functions from Enemy
-    void update(float deltaTime, const std::vector<Platform>& platforms) override;
+    void update(float deltaTime, const Platform* platforms, int platformCount) override;
     void draw(sf::RenderWindow& window, bool showHitbox) override;
 
     int getPoints() const override;
@@ -93,9 +96,6 @@ public:
 private:
     float mMoveSpeed;          // how fast Botom walks
     bool mMovingRight;         // current walking direction
-    float mDirectionTimer;     // counts time since last direction change
-    float mDirectionInterval;  // seconds until next direction change
-
     float mJumpTimer;          // counts time since last jump
     float mJumpInterval;       // how often enemy jumps
   
@@ -110,7 +110,7 @@ public:
     FlyingEnemy(float x, float y);
 
     void update(float deltaTime,
-        const std::vector<Platform>& platforms) override;
+        const Platform* platforms, int platformCount) override;
     void draw(sf::RenderWindow& window, bool showHitbox) override;
     int getPoints() const override;
 
@@ -132,7 +132,7 @@ public:
     Tornado(float x, float y);
 
     void update(float deltaTime,
-        const std::vector<Platform>& platforms) override;
+        const Platform* platforms, int platformCount) override;
     void draw(sf::RenderWindow& window, bool showHitbox) override;
     int getPoints() const override;
 
