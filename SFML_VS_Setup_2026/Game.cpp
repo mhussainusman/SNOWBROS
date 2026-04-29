@@ -35,9 +35,9 @@ Game::Game()
 
     // load font
     mFont.loadFromFile(
-        "E:/Semester 2/OOP/LAB/SNOWBROS/SFML_VS_Setup_2026/assets/Fonts/ps2.ttf");
+        "assets/Fonts/ps2.ttf");
     mHUD.loadFont(
-        "E:/Semester 2/OOP/LAB/SNOWBROS/SFML_VS_Setup_2026/assets/Fonts/ps2.ttf");
+        "assets/Fonts/ps2.ttf");
 
     // setup 3 characters
     mCharacters[0] = { "Nick", sf::Color(100, 180, 255) };  // blue
