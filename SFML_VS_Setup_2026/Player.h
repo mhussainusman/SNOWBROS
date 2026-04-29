@@ -26,7 +26,7 @@ public:
     void loseLife();             // called when player touches enemy
     bool isAlive() const;        // true when lives > 0
     bool isRespawning() const;   // true during respawn invincibility period
-  
+    void resetLives();
 
 private:
     void handleCollision(const Platform* platforms, int platformCount);
@@ -54,5 +54,6 @@ private:
     // starting position — used for respawning
     float mStartX;
     float mStartY;
+
 
 };

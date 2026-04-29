@@ -2,67 +2,131 @@
 #include <SFML/Graphics.hpp>
 #include "Player.h"
 #include "Platform.h"
-#include"Enemy.h"
+#include "Enemy.h"
 #include "Snowball.h"
-#include"HUD.h"
-#include"LevelManager.h"
+#include "HUD.h"
+#include "LevelManager.h"
+#include <fstream>
+#include <string>
 
-// Game: owns the window, runs the game loop
+// all possible game screens
+enum GameState {
+    LOGIN,
+    CHARACTER_SELECT,
+    MAIN_MENU,
+    PLAYING,
+    LEVEL_COMPLETE,
+    PAUSED,
+    GAME_OVER,
+    VICTORY
+};
+
+// character data — name and color for now
+// sprite added later
+struct Character {
+    std::string name;
+    sf::Color color;
+};
+
 class Game {
 public:
     Game();
+    ~Game();
     void run();
-	~Game();
 
 private:
+
+    // --- GAME LOOP ---
     void processEvents();
     void update(float deltaTime);
     void render();
 
-   
-    void checkPlayerEnemyCollision();   // checks if player touches enemy
+    // --- SCREEN UPDATES ---
+    void updateLogin();
+    void updateCharSelect();
+    void updateMainMenu();
+    void updatePlaying(float deltaTime);
+    void updateLevelComplete(float deltaTime);
+    void updatePaused();
+    void updateGameOver();
+    void updateVictory();
+
+    // --- SCREEN RENDERS ---
+    void renderLogin();
+    void renderCharSelect();
+    void renderMainMenu();
+    void renderPlaying();
+    void renderLevelComplete();
+    void renderPaused();
+    void renderGameOver();
+    void renderVictory();
+
+    // --- GAMEPLAY HELPERS ---
     void checkSnowballEnemyCollision();
-    void checkRollingEnemyCollision(); // rolling snowball hits other enemies
-	void checkKnifePlayerCollision();   // knife hits player
+    void checkPlayerEnemyCollision();
+    void checkRollingEnemyCollision();
+    void checkKnifePlayerCollision();
+    void loadCurrentLevel();
+    void checkLevelComplete();
 
-    // internal helpers to manage dynamic collections (used by Game.cpp)
-    void addPlatform(Platform p);
-    void addEnemy(Enemy* e);
-    void addSnowball(Snowball s);
+    // helper to draw centered text
+    void drawCenteredText(sf::Text& text, float y);
 
+    // --- WINDOW ---
     sf::RenderWindow mWindow;
+    sf::Font mFont;           // shared font for all screens
+    GameState mState;         // current screen
 
-    Player mPlayer1 ;
+    // --- PLAYERS ---
+    Player mPlayer1; 
     Player mPlayer2;
-  
-    // platforms
+
+    // --- DYNAMIC ARRAYS ---
     Platform* mPlatforms;
     int mPlatformCount;
     int mPlatformCapacity;
 
-    // enemies
     Enemy** mEnemies;
     int mEnemyCount;
     int mEnemyCapacity;
 
-    // snowballs
     Snowball* mSnowballs;
     int mSnowballCount;
     int mSnowballCapacity;
 
-
-    bool mShowHitboxes; // toggled by pressing H key
-
+    // --- GAME DATA ---
+    bool mShowHitboxes;
     int mScore1;
     int mScore2;
     bool mGameOver;
-
-    HUD mHUD;
     int mCurrentLevel;
+    float mLevelCompleteTimer; // how long level complete screen shows
 
+    // --- SYSTEMS ---
+    HUD mHUD;
     LevelManager mLevelManager;
-	void loadCurrentLevel();
-	void checkLevelComplete();
 
+    // --- LOGIN ---
+    std::string mUsernameInput;   // what player is typing
+    std::string mPasswordInput;   // password input
+    bool mTypingUsername;         // true = typing username, false = password
+    std::string mLoginMessage;    // error or success message
+    std::string mLoggedInUser;    // username after successful login
 
+    // --- CHARACTER SELECT ---
+    Character mCharacters[3];     // 3 available characters
+    int mP1CharIndex;             // which character player 1 selected
+    int mP2CharIndex;             // which character player 2 selected
+    bool mP1Selected;             // player 1 confirmed selection
+    bool mP2Selected;             // player 2 confirmed selection
+
+    // --- MAIN MENU ---
+    int mMenuSelection;           // which menu item is highlighted
+
+    // --- HELPERS ---
+    void addPlatform(Platform p);
+    void addEnemy(Enemy* e);
+    void addSnowball(Snowball s);
+    bool checkLogin(const std::string& user, const std::string& pass);
+    void saveLogin(const std::string& user, const std::string& pass);
 };

@@ -194,6 +194,16 @@ void Player::handleCollision(const Platform* platforms, int platformCount) {
     }
 }
 
+void Player::resetLives() {
+    mLives = 3;
+    mRespawning = false;
+    mRespawnTimer = 0.f;
+    mHitbox.setPosition(mStartX, mStartY);
+    mVisual.setPosition(mStartX, mStartY);
+    mVelocityY = 0.f;
+}
+
+
 void Player::draw(sf::RenderWindow& window, bool showHitbox) {
 
     // if dead dont draw anything
