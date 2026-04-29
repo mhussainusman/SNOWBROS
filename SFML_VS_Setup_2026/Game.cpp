@@ -20,22 +20,13 @@ Game::Game()
 
     mWindow.setFramerateLimit(60);
 
-    addPlatform(Platform(0.f, 615.f, 800.f, 20.f));
-    addPlatform(Platform(80.f, 495.f, 640.f, 20.f));
-    addPlatform(Platform(200.f, 385.f, 600.f, 20.f));
-    addPlatform(Platform(0.f, 275.f, 600.f, 20.f));
-    addPlatform(Platform(150.f, 185.f, 500.f, 20.f));
 
 
     mHUD.loadFont("assets/Fonts/ps2.ttf");
 
-
-    // test enemies
-    addEnemy(new Botom(100.f, 480.f));
-    addEnemy(new Botom(600.f, 360.f));
-    addEnemy(new Botom(300.f, 240.f));
-    addEnemy(new FlyingEnemy(400.f, 300.f));
-    addEnemy(new Tornado(400.f, 100.f));
+	mLevelManager.selectBonusLevels(); // randomly select bonus levels at game start
+	loadCurrentLevel(); // load first level
+   
 
 
 }
@@ -137,6 +128,8 @@ void Game::update(float deltaTime) {
         mScore2, mPlayer2.getLives(),
         mCurrentLevel);
 
+	checkLevelComplete();
+
     // game over when both players out of lives
     if (!mPlayer1.isAlive() && !mPlayer2.isAlive())
         mGameOver = true;
@@ -168,7 +161,7 @@ void Game::checkPlayerEnemyCollision() {
                 sf::Keyboard::isKeyPressed(sf::Keyboard::Down)) 
             {
                 mEnemies[i]->startRolling(mPlayer1.isFacingRight(),0);
-                mScore1 += mEnemies[i]->getPoints();
+				mScore1 += mEnemies[i]->getPoints();
                
             }
 
@@ -178,7 +171,7 @@ void Game::checkPlayerEnemyCollision() {
                 sf::Keyboard::isKeyPressed(sf::Keyboard::S))
             {
                 mEnemies[i]->startRolling(mPlayer2.isFacingRight(),1);
-                mScore2 += mEnemies[i]->getPoints();
+				mScore2 += mEnemies[i]->getPoints();    
             }
 
             continue; // skip life loss for encased enemies
@@ -336,6 +329,38 @@ void Game::addSnowball(Snowball s) {
     }
     mSnowballs[mSnowballCount++] = s;
 }
+
+void Game::loadCurrentLevel() {
+    // clear existing platforms and enemies
+    mPlatformCount = 0;
+
+    // delete existing enemies
+    for (int i = 0; i < mEnemyCount; i++)
+        delete mEnemies[i];
+    mEnemyCount = 0;
+
+    // load from file
+    mLevelManager.loadLevel(mCurrentLevel,
+        mPlatforms, mPlatformCount,
+        mEnemies, mEnemyCount);
+}
+
+void Game::checkLevelComplete() {
+    // if no enemies left — level complete
+    if (mEnemyCount == 0) {
+        mCurrentLevel++;
+
+        // check if game complete
+        if (mCurrentLevel > mLevelManager.getTotalLevels()) {
+            mGameOver = true; // victory — handle later
+            return;
+        }
+
+        // load next level
+        loadCurrentLevel();
+    }
+}
+
 
 Game::~Game() {
     for (int i = 0; i < mEnemyCount; i++)

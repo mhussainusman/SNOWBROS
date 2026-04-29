@@ -84,7 +84,7 @@ protected:
 // inherits from Enemy
 class Botom : public Enemy {
 public:
-    Botom(float x, float y);
+    Botom(float x, float y, int variant=0);
 
     // overriding pure virtual functions from Enemy
     void update(float deltaTime, const Platform* platforms, int platformCount) override;

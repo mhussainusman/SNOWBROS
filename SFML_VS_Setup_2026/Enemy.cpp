@@ -134,9 +134,9 @@ int Enemy::getKickedByPlayer() const { return mKickedByPlayer; }
 
 // --- BOTOM ---
 
-Botom::Botom(float x, float y)
-    : Enemy(x, y, 2),
-    mMoveSpeed(130.f),
+Botom::Botom(float x, float y,int variant)
+	: Enemy(x, y, 2 + variant),// hits to encase increases with variant
+	mMoveSpeed(130.f * (1.f + variant * 0.25f)),// speed increases with variant
     mMovingRight(rand() % 2),
     mJumpTimer(0.f),
     mJumpInterval(1.5f)
@@ -144,10 +144,24 @@ Botom::Botom(float x, float y)
 
     mVisual.setSize(sf::Vector2f(38.f, 42.f));
     mHitbox.setSize(sf::Vector2f(34.f, 38.f));
-    mOriginalColor = sf::Color(220, 80, 80);
-    mVisual.setFillColor(mOriginalColor);
     mHitbox.setPosition(x, y);
     mVisual.setPosition(x, y);
+
+    // color based on variant
+    if (variant == 0) {
+        mOriginalColor = sf::Color(220, 80, 80);   // red
+    }
+    else if (variant == 1) {
+        mOriginalColor = sf::Color(80, 220, 80);   // green
+    }
+    else if (variant == 2) {
+        mOriginalColor = sf::Color(80, 80, 220);   // blue
+    }
+    else {
+        mOriginalColor = sf::Color(150, 80, 220);  // purple
+    }
+
+    mVisual.setFillColor(mOriginalColor);
 
     // start moving in random direction
     mMovingRight = (rand() % 2 == 0);

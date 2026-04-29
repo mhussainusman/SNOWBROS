@@ -5,6 +5,7 @@
 #include"Enemy.h"
 #include "Snowball.h"
 #include"HUD.h"
+#include"LevelManager.h"
 
 // Game: owns the window, runs the game loop
 class Game {
@@ -59,7 +60,9 @@ private:
     HUD mHUD;
     int mCurrentLevel;
 
-
+    LevelManager mLevelManager;
+	void loadCurrentLevel();
+	void checkLevelComplete();
 
 
 };

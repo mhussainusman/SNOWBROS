@@ -18,6 +18,7 @@ public:
     // draw HUD on top of everything
     void draw(sf::RenderWindow& window);
 
+
 private:
     sf::Font mFont;
 
