@@ -12,7 +12,10 @@ Player::Player(int playerIndex)
     mRespawnTime(3.f),    // 3 seconds invincibility after respawn
     mRespawning(false),
     mStartX(0.f),
-    mStartY(0.f) {
+    mStartY(0.f),
+    mSpeedBoosted(false),
+    mBalloonMode(false) 
+{
 
     mHitbox.setSize(sf::Vector2f(40.f, 50.f));
     mVisual.setSize(sf::Vector2f(40.f, 50.f));
@@ -53,15 +56,18 @@ void Player::update(float deltaTime,
         // just cannot lose life
     }
 
+    
     // horizontal movement
     float moveX = 0.f;
+    float currentSpeed = mSpeedBoosted ? mSpeed * 1.5f : mSpeed;
+
 
     if (mPlayerIndex == 0) {
         // player 1 — arrow keys
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
-            moveX = -mSpeed;
+            moveX = -currentSpeed;
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right))
-            moveX = mSpeed;
+            moveX = currentSpeed;
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up) && mIsOnGround) {
             mVelocityY = JUMP_FORCE;
             mIsOnGround = false;
@@ -70,9 +76,9 @@ void Player::update(float deltaTime,
     else {
         // player 2 — WASD
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::A))
-            moveX = -mSpeed;
+            moveX = -currentSpeed;
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::D))
-            moveX = mSpeed;
+            moveX = currentSpeed;
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::W) && mIsOnGround) {
             mVelocityY = JUMP_FORCE;
             mIsOnGround = false;
@@ -87,10 +93,17 @@ void Player::update(float deltaTime,
     mVisual.move(moveX * deltaTime, 0.f);
 
     // gravity
-    mVelocityY += GRAVITY * deltaTime;
-    if (mVelocityY > MAX_FALL_SPEED)
-        mVelocityY = MAX_FALL_SPEED;
+    if (mBalloonMode) {
+        mVelocityY = -80.f; // float upward slowly
+    }
+    else {
+        mVelocityY += GRAVITY * deltaTime;
+        if (mVelocityY > MAX_FALL_SPEED)
+            mVelocityY = MAX_FALL_SPEED;
+    }
 
+    // balloon mode — float upward slowly
+   
     mHitbox.move(0.f, mVelocityY * deltaTime);
     mVisual.move(0.f, mVelocityY * deltaTime);
 
@@ -107,6 +120,12 @@ void Player::update(float deltaTime,
         mHitbox.setPosition(800.f - mHitbox.getSize().x, pos.y);
         mVisual.setPosition(800.f - mHitbox.getSize().x, pos.y);
     }
+    // stop player floating above the top of the screen
+    if (pos.y < 0.f) {
+        mHitbox.setPosition(pos.x, 0.f);
+        mVisual.setPosition(pos.x, 0.f);
+        mVelocityY = 0.f; // stop upward movement at ceiling
+    }
 
     // track throw key
     bool throwPressed = false;
@@ -117,6 +136,9 @@ void Player::update(float deltaTime,
 
     if (!throwPressed)
         mThrowKeyHeld = false;
+
+    // speed boost doubles movement speed
+   
 }
 
 bool Player::wantsToThrow() {
@@ -195,7 +217,7 @@ void Player::handleCollision(const Platform* platforms, int platformCount) {
 }
 
 void Player::resetLives() {
-    mLives = 3;
+    mLives = 10;
     mRespawning = false;
     mRespawnTimer = 0.f;
     mHitbox.setPosition(mStartX, mStartY);
@@ -233,4 +255,17 @@ sf::FloatRect Player::getBounds() const {
 
 bool Player::isFacingRight() const {
     return mFacingRight;
+}
+
+// power ups
+void Player::setSpeedBoost(bool active) {
+    mSpeedBoosted = active;
+}
+
+void Player::setBalloonMode(bool active) {
+    mBalloonMode = active;
+}
+
+void Player::addLife() {
+    mLives++;
 }

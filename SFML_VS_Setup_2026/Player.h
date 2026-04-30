@@ -27,6 +27,10 @@ public:
     bool isAlive() const;        // true when lives > 0
     bool isRespawning() const;   // true during respawn invincibility period
     void resetLives();
+	// for power ups
+    void setSpeedBoost(bool active);
+    void setBalloonMode(bool active);
+    void addLife();
 
 private:
     void handleCollision(const Platform* platforms, int platformCount);
@@ -55,5 +59,8 @@ private:
     float mStartX;
     float mStartY;
 
+	// power up states
+	bool mSpeedBoosted;     // true when speed boost is active
+	bool mBalloonMode;      // true when balloon mode is active
 
 };

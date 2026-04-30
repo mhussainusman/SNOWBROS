@@ -8,6 +8,7 @@
 #include "LevelManager.h"
 #include <fstream>
 #include <string>
+#include "PowerUp.h"
 
 // all possible game screens
 enum GameState {
@@ -129,4 +130,30 @@ private:
     void addSnowball(Snowball s);
     bool checkLogin(const std::string& user, const std::string& pass);
     void saveLogin(const std::string& user, const std::string& pass);
+
+    // power ups
+    PowerUp* mPowerUps;
+    int mPowerUpCount;
+    int mPowerUpCapacity;
+
+    // active power up effects on players
+    float mSpeedBoostTimer1;      // player 1 speed boost remaining
+    float mSpeedBoostTimer2;      // player 2 speed boost remaining
+    float mBalloonTimer1;         // player 1 balloon mode remaining
+    float mBalloonTimer2;         // player 2 balloon mode remaining
+    bool mSnowballPower1;         // player 1 one hit encase
+    bool mSnowballPower2;         // player 2 one hit encase
+    bool mDistanceBoost1;         // player 1 full screen snowball
+    bool mDistanceBoost2;         // player 2 full screen snowball
+
+    int mGemCount1;               // player 1 gems
+    int mGemCount2;               // player 2 gems
+
+    // helper functions
+    void addPowerUp(PowerUp p);
+    void spawnPowerUp(float x, float y);
+    void checkPowerUpCollection();
+    void updatePowerUpEffects(float deltaTime);
+
+    void applyPowerUp(PowerUpType type, int player);
 };

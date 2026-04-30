@@ -11,9 +11,10 @@ public:
     bool loadFont(const std::string& fontPath);
 
     // update HUD values every frame
+ 
     void update(int score1, int lives1,
         int score2, int lives2,
-        int level);
+        int level, int gems1, int gems2);
 
     // draw HUD on top of everything
     void draw(sf::RenderWindow& window);
@@ -26,11 +27,13 @@ private:
     sf::Text mScore1Text;
     sf::Text mLives1Text;
     sf::Text mP1Label;
+	sf::Text mGemText1;
 
     // player 2 — top right
     sf::Text mScore2Text;
     sf::Text mLives2Text;
     sf::Text mP2Label;
+	sf::Text mGemText2;
 
     // level — top center
     sf::Text mLevelText;
@@ -38,4 +41,6 @@ private:
     // helper to setup text properties
     void setupText(sf::Text& text, int size,
         sf::Color color, float x, float y);
+	// for displaying gem counts 
+
 };

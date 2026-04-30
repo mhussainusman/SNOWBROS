@@ -25,11 +25,19 @@ Game::Game()
     mP1Selected(false),
     mP2Selected(false),
     mMenuSelection(0),
-    mLevelCompleteTimer(0.f) {
+    mLevelCompleteTimer(0.f),
+    mPowerUpCount(0), mPowerUpCapacity(20),
+    mSpeedBoostTimer1(0.f), mSpeedBoostTimer2(0.f),
+    mBalloonTimer1(0.f), mBalloonTimer2(0.f),
+    mSnowballPower1(false), mSnowballPower2(false),
+    mDistanceBoost1(false), mDistanceBoost2(false),
+    mGemCount1(0), mGemCount2(0)
+{
 
     mPlatforms = new Platform[mPlatformCapacity];
     mEnemies = new Enemy * [mEnemyCapacity];
     mSnowballs = new Snowball[mSnowballCapacity];
+    mPowerUps = new PowerUp[mPowerUpCapacity];
 
     mWindow.setFramerateLimit(60);
 
@@ -55,6 +63,7 @@ Game::~Game() {
     delete[] mEnemies;
     delete[] mPlatforms;
     delete[] mSnowballs;
+    delete[]mPowerUps;
 }
 
  
@@ -261,6 +270,16 @@ void Game::updateMainMenu() {
 }
 
 void Game::updatePlaying(float deltaTime) {
+    // update power ups
+    for (int i = 0; i < mPowerUpCount; i++)
+        mPowerUps[i].update(deltaTime);
+
+    // check if player collected power up
+    checkPowerUpCollection();
+
+    // update active power up timers
+    updatePowerUpEffects(deltaTime);
+
     if (mGameOver) {
         mState = GAME_OVER;
         return;
@@ -325,7 +344,7 @@ void Game::updatePlaying(float deltaTime) {
     // update HUD
     mHUD.update(mScore1, mPlayer1.getLives(),
         mScore2, mPlayer2.getLives(),
-        mCurrentLevel);
+        mCurrentLevel, mGemCount1, mGemCount2);
 
     // check level complete
     checkLevelComplete();
@@ -654,6 +673,10 @@ void Game::renderPlaying() {
     for (int i = 0; i < mSnowballCount; i++)
         mSnowballs[i].draw(mWindow, mShowHitboxes);
 
+    for (int i = 0; i < mPowerUpCount; i++)
+        mPowerUps[i].draw(mWindow, mShowHitboxes);
+
+
     mPlayer1.draw(mWindow, mShowHitboxes);
     mPlayer2.draw(mWindow, mShowHitboxes);
 
@@ -840,6 +863,12 @@ void Game::loadCurrentLevel() {
         mPlatforms[0] = Platform(0.f, 615.f, 800.f, 20.f);
         mPlatformCount = 1;
     }
+
+    mPowerUpCount = 0;
+    mSnowballPower1 = false;
+    mSnowballPower2 = false;
+    mDistanceBoost1 = false;
+    mDistanceBoost2 = false;
 }
 
 void Game::checkLevelComplete() {
@@ -927,6 +956,11 @@ void Game::checkRollingEnemyCollision() {
                 break;
             }
             else {
+
+                // power spawns
+                sf::FloatRect bounds = mEnemies[j]->getBounds();
+                spawnPowerUp(bounds.left, bounds.top);
+
                 mEnemies[j]->setDead();
                 int points = mEnemies[j]->getPoints();
                 if (mEnemies[i]->getKickedByPlayer() == 0)
@@ -1043,4 +1077,152 @@ void Game::addSnowball(Snowball s) {
         mSnowballs = temp;
     }
     mSnowballs[mSnowballCount++] = s;
+}
+// power ups functions
+void Game::addPowerUp(PowerUp p) {
+    if (mPowerUpCount == mPowerUpCapacity) {
+        mPowerUpCapacity *= 2;
+        PowerUp* temp = new PowerUp[mPowerUpCapacity];
+        for (int i = 0; i < mPowerUpCount; i++)
+            temp[i] = mPowerUps[i];
+        delete[] mPowerUps;
+        mPowerUps = temp;
+    }
+    mPowerUps[mPowerUpCount++] = p;
+}
+
+void Game::spawnPowerUp(float x, float y) {
+    // randomly pick power up type
+    // gem appears more often than others
+    int roll = rand() % 10;
+    PowerUpType type;
+
+    if (roll < 4)       type = GEM;
+    else if (roll < 5)  type = EXTRA_LIFE;
+    else if (roll < 6)  type = SPEED_BOOST;
+    else if (roll < 7)  type = SNOWBALL_POWER;
+    else if (roll < 8)  type = DISTANCE_BOOST;
+    else                type = BALLOON_MODE;
+
+    addPowerUp(PowerUp(x, y, type));
+}
+
+void Game::checkPowerUpCollection() {
+    for (int i = 0; i < mPowerUpCount; i++) {
+        if (mPowerUps[i].isCollected() ||
+            mPowerUps[i].isExpired()) continue;
+
+        // check player 1 collision
+        if (mPlayer1.isAlive() &&
+            mPlayer1.getBounds().intersects(
+                mPowerUps[i].getBounds())) {
+            mPowerUps[i].collect();
+            applyPowerUp(mPowerUps[i].getType(), 1);
+        }
+
+        // check player 2 collision
+        else if (mPlayer2.isAlive() &&
+            mPlayer2.getBounds().intersects(
+                mPowerUps[i].getBounds())) {
+            mPowerUps[i].collect();
+            applyPowerUp(mPowerUps[i].getType(), 2);
+        }
+    }
+
+    // remove collected or expired power ups
+    for (int i = mPowerUpCount - 1; i >= 0; i--) {
+        if (mPowerUps[i].isCollected() ||
+            mPowerUps[i].isExpired()) {
+            for (int k = i; k < mPowerUpCount - 1; k++)
+                mPowerUps[k] = mPowerUps[k + 1];
+            mPowerUpCount--;
+        }
+    }
+}
+
+void Game::applyPowerUp(PowerUpType type, int player) {
+    if (player == 1) {
+        switch (type) {
+        case GEM:
+            mGemCount1 += 10;
+            mScore1 += 500;
+            break;
+        case SPEED_BOOST:
+            mSpeedBoostTimer1 = 15.f;
+            mPlayer1.setSpeedBoost(true);
+            break;
+        case SNOWBALL_POWER:
+            mSnowballPower1 = true;
+            break;
+        case DISTANCE_BOOST:
+            mDistanceBoost1 = true;
+            break;
+        case BALLOON_MODE:
+            mBalloonTimer1 = 10.f;
+            mPlayer1.setBalloonMode(true);
+            break;
+        case EXTRA_LIFE:
+            mPlayer1.addLife();
+            break;
+        }
+    }
+    else {
+        switch (type) {
+        case GEM:
+            mGemCount2 += 10;
+            mScore2 += 500;
+            break;
+        case SPEED_BOOST:
+            mSpeedBoostTimer2 = 15.f;
+            mPlayer2.setSpeedBoost(true);
+            break;
+        case SNOWBALL_POWER:
+            mSnowballPower2 = true;
+            break;
+        case DISTANCE_BOOST:
+            mDistanceBoost2 = true;
+            break;
+        case BALLOON_MODE:
+            mBalloonTimer2 = 10.f;
+            mPlayer2.setBalloonMode(true);
+            break;
+        case EXTRA_LIFE:
+            mPlayer2.addLife();
+            break;
+        }
+    }
+}
+
+void Game::updatePowerUpEffects(float deltaTime) {
+    // count down speed boost timers
+    if (mSpeedBoostTimer1 > 0) {
+        mSpeedBoostTimer1 -= deltaTime;
+        if (mSpeedBoostTimer1 <= 0) {
+            mSpeedBoostTimer1 = 0.f;
+            mPlayer1.setSpeedBoost(false);
+        }
+    }
+    if (mSpeedBoostTimer2 > 0) {
+        mSpeedBoostTimer2 -= deltaTime;
+        if (mSpeedBoostTimer2 <= 0) {
+            mSpeedBoostTimer2 = 0.f;
+            mPlayer2.setSpeedBoost(false);
+        }
+    }
+
+    // count down balloon timers
+    if (mBalloonTimer1 > 0) {
+        mBalloonTimer1 -= deltaTime;
+        if (mBalloonTimer1 <= 0) {
+            mBalloonTimer1 = 0.f;
+            mPlayer1.setBalloonMode(false);
+        }
+    }
+    if (mBalloonTimer2 > 0) {
+        mBalloonTimer2 -= deltaTime;
+        if (mBalloonTimer2 <= 0) {
+            mBalloonTimer2 = 0.f;
+            mPlayer2.setBalloonMode(false);
+        }
+    }
 }
