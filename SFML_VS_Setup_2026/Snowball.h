@@ -30,5 +30,6 @@ private:
     float mMaxDistance;        // disappears after this distance
     bool mExpired;             // true when should be removed
     int mPlayerIndex;          // 0 = player1, 1 = player2
+    float mVelocityY;
    
 };

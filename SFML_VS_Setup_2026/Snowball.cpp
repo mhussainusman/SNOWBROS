@@ -4,9 +4,11 @@ Snowball::Snowball(float x, float y, bool movingRight, int playerIndex)
     : mSpeed(400.f),
     mMovingRight(movingRight),
     mDistanceTravelled(0.f),
-    mMaxDistance(800.f),
+    mMaxDistance(300.f),
     mExpired(false),
-    mPlayerIndex(playerIndex) {
+    mPlayerIndex(playerIndex),
+    mVelocityY(0.f)
+{
 
     // hitbox — actual collision area
     mHitbox.setSize(sf::Vector2f(20.f, 16.f));
@@ -23,20 +25,29 @@ Snowball::Snowball(float x, float y, bool movingRight, int playerIndex)
 void Snowball::update(float deltaTime) {
     if (mExpired) return;
 
-    // move in current direction
+    // horizontal movement
     float moveX = mMovingRight ? mSpeed : -mSpeed;
     mHitbox.move(moveX * deltaTime, 0.f);
+
+    // gravity curves snowball downward over time
+    if (mMaxDistance<=300.f) {
+        mVelocityY += 500.f * deltaTime;
+        mHitbox.move(0.f, mVelocityY * deltaTime);
+    }
+
     mVisual.setPosition(mHitbox.getPosition());
 
+    // track horizontal distance
     mDistanceTravelled += mSpeed * deltaTime;
     if (mDistanceTravelled >= mMaxDistance)
         mExpired = true;
-    
+
+    // expire when off screen
     sf::Vector2f pos = mHitbox.getPosition();
+    if (pos.y > 680.f)
+        mExpired = true;
     if (pos.x > 820.f || pos.x + mHitbox.getSize().x < -20.f)
         mExpired = true;
-
-  
 }
 
 void Snowball::draw(sf::RenderWindow& window, bool showHitbox) {

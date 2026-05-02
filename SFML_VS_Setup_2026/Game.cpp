@@ -1,5 +1,4 @@
 #include "Game.h"
-
  
 // CONSTRUCTOR
  
@@ -318,12 +317,13 @@ void Game::updatePlaying(float deltaTime) {
 
     // player 1 throw
     if (mPlayer1.wantsToThrow()) {
+     
         sf::Vector2f pos = mPlayer1.getPosition();
         float snowX = mPlayer1.isFacingRight() ?
             pos.x + 40.f : pos.x - 20.f;
         float snowY = pos.y + 17.f;
         Snowball s(snowX, snowY, mPlayer1.isFacingRight(), 0);
-        if (mDistanceBoost1) s.setMaxDistance(800.f);
+		if (mDistanceBoost1) s.setMaxDistance(800.f); // distance boost active? :: increase snowball range
         addSnowball(s);
     }
 
