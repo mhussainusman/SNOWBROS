@@ -8,7 +8,7 @@ Player::Player(int playerIndex)
     mFacingRight(true),
     mPlayerIndex(playerIndex),
     mThrowKeyHeld(false),
-    mLives(10),
+    mLives(3),
     mRespawnTimer(0.f),
     mRespawnTime(3.f),
     mRespawning(false),
@@ -305,4 +305,6 @@ void Player::setBalloonMode(bool active) {
     mVelocityX = 0.f;
     mVelocityY = 0.f;
 }
-void Player::addLife() { mLives++; }
+void Player::addLife() {
+    if (mLives < 10) mLives++;
+ }

@@ -184,7 +184,7 @@ void Game::processEvents() {
                 if (event.key.code == sf::Keyboard::Return) {
                     if (mMenuSelection == 0) {
                         // new game
-                        mCurrentLevel = 9;
+						mCurrentLevel = 1; // you can start of from any level, through this
                         mScore1 = 0;
                         mScore2 = 0;
                         mGameOver = false;        // ← reset game over flag
