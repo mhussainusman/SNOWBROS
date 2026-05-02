@@ -37,6 +37,6 @@ private:
     bool mExpired;
 
     float mLifeTimer;       // how long before it disappears
-    float mBobTimer;        // for bobbing animation
+   
     sf::Color mColor;       // color based on type
 };

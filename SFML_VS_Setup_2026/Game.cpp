@@ -25,7 +25,6 @@ Game::Game()
     mP1Selected(false),
     mP2Selected(false),
     mMenuSelection(0),
-    mLevelCompleteTimer(0.f),
     mPowerUpCount(0), mPowerUpCapacity(20),
     mSpeedBoostTimer1(0.f), mSpeedBoostTimer2(0.f),
     mBalloonTimer1(0.f), mBalloonTimer2(0.f),
@@ -144,6 +143,29 @@ void Game::processEvents() {
                
             }
 
+			// DEBUG to check power up functionality, remove before submission
+            if (mState == PLAYING) {
+                // DEBUG — press number keys to test power ups on player 1
+                // REMOVE THESE BEFORE FINAL SUBMISSION
+                if (event.key.code == sf::Keyboard::P)
+                    applyPowerUp(GEM, 1);
+                if (event.key.code == sf::Keyboard::O)
+                    applyPowerUp(SPEED_BOOST, 1);
+                if (event.key.code == sf::Keyboard::I)
+                    applyPowerUp(SNOWBALL_POWER, 1);
+                if (event.key.code == sf::Keyboard::U)
+                    applyPowerUp(DISTANCE_BOOST, 1);
+                if (event.key.code == sf::Keyboard::Y)
+                    applyPowerUp(BALLOON_MODE, 1);
+                if (event.key.code == sf::Keyboard::T)
+                    applyPowerUp(EXTRA_LIFE, 1);
+
+            }
+
+			// End of debug of power up functionality
+            
+
+
             // hitbox toggle during gameplay
             if (mState == PLAYING &&
                 event.key.code == sf::Keyboard::H)
@@ -163,7 +185,7 @@ void Game::processEvents() {
                 if (event.key.code == sf::Keyboard::Return) {
                     if (mMenuSelection == 0) {
                         // new game
-                        mCurrentLevel = 1;
+                        mCurrentLevel = 9;
                         mScore1 = 0;
                         mScore2 = 0;
                         mGameOver = false;        // ← reset game over flag
@@ -218,6 +240,13 @@ void Game::processEvents() {
                     mState = MAIN_MENU;
             }
 
+            // level complete — press enter to continue
+            if (mState == LEVEL_COMPLETE &&
+                event.key.code == sf::Keyboard::Return) {
+                loadCurrentLevel();
+                mState = PLAYING;
+            }
+
             // pause menu
             if (mState == PAUSED) {
                 if (event.key.code == sf::Keyboard::R)
@@ -249,7 +278,6 @@ void Game::update(float deltaTime) {
     case CHARACTER_SELECT: updateCharSelect(); break;
     case MAIN_MENU:        updateMainMenu(); break;
     case PLAYING:          updatePlaying(deltaTime); break;
-    case LEVEL_COMPLETE:   updateLevelComplete(deltaTime); break;
     case PAUSED:           updatePaused(); break;
     case GAME_OVER:        updateGameOver(); break;
     case VICTORY:          updateVictory(); break;
@@ -294,8 +322,9 @@ void Game::updatePlaying(float deltaTime) {
         float snowX = mPlayer1.isFacingRight() ?
             pos.x + 40.f : pos.x - 20.f;
         float snowY = pos.y + 17.f;
-        addSnowball(Snowball(snowX, snowY,
-            mPlayer1.isFacingRight(), 0));
+        Snowball s(snowX, snowY, mPlayer1.isFacingRight(), 0);
+        if (mDistanceBoost1) s.setMaxDistance(800.f);
+        addSnowball(s);
     }
 
     // player 2 throw
@@ -304,8 +333,9 @@ void Game::updatePlaying(float deltaTime) {
         float snowX = mPlayer2.isFacingRight() ?
             pos.x + 40.f : pos.x - 20.f;
         float snowY = pos.y + 17.f;
-        addSnowball(Snowball(snowX, snowY,
-            mPlayer2.isFacingRight(), 1));
+        Snowball s(snowX, snowY, mPlayer2.isFacingRight(), 1);
+        if (mDistanceBoost2) s.setMaxDistance(800.f);
+        addSnowball(s);
     }
 
     // update snowballs
@@ -354,14 +384,6 @@ void Game::updatePlaying(float deltaTime) {
         mGameOver = true;
 }
 
-void Game::updateLevelComplete(float deltaTime) {
-    mLevelCompleteTimer += deltaTime;
-    // after 3 seconds automatically load next level
-    if (mLevelCompleteTimer >= 3.f) {
-        mLevelCompleteTimer = 0.f;
-        mState = PLAYING;
-    }
-}
 
 void Game::updatePaused() {
     // nothing — handled in processEvents
@@ -719,7 +741,7 @@ void Game::renderLevelComplete() {
 
     sf::Text next;
     next.setFont(mFont);
-    next.setString("NEXT LEVEL IN 3 SECONDS...");
+    next.setString("Press ENTER to continue");
     next.setCharacterSize(14);
     next.setFillColor(sf::Color::White);
     drawCenteredText(next, 420.f);
@@ -859,6 +881,7 @@ void Game::loadCurrentLevel() {
         mPlatforms, mPlatformCount,
         mEnemies, mEnemyCount);
 
+
     if (!success || mPlatformCount == 0) {
         mPlatforms[0] = Platform(0.f, 615.f, 800.f, 20.f);
         mPlatformCount = 1;
@@ -869,18 +892,21 @@ void Game::loadCurrentLevel() {
     mSnowballPower2 = false;
     mDistanceBoost1 = false;
     mDistanceBoost2 = false;
+
+	
 }
 
 void Game::checkLevelComplete() {
-    if (mEnemyCount == 0) {
+    if (mEnemyCount == 0 && mPowerUpCount == 0) {
+
         if (mCurrentLevel >= mLevelManager.getTotalLevels()) {
             mState = VICTORY;
             return;
         }
         mCurrentLevel++;
         mState = LEVEL_COMPLETE;
-        mLevelCompleteTimer = 0.f;
-        loadCurrentLevel();
+        
+      
     }
 }
 
@@ -894,7 +920,17 @@ void Game::checkSnowballEnemyCollision() {
         for (int j = 0; j < mEnemyCount; j++) {
             if (mSnowballs[i].getBounds().intersects(
                 mEnemies[j]->getBounds())) {
-                mEnemies[j]->takeDamage();
+               
+                // if player has snowball power — instant encase
+                bool p1Power = mSnowballs[i].getPlayerIndex() == 0 && mSnowballPower1;
+                bool p2Power = mSnowballs[i].getPlayerIndex() == 1 && mSnowballPower2;
+
+                if (p1Power || p2Power)
+                    mEnemies[j]->instantEncase();
+                else
+                    mEnemies[j]->takeDamage();
+
+
                 mSnowballs[i].setExpired();
                 break;
             }
@@ -907,14 +943,14 @@ void Game::checkPlayerEnemyCollision() {
         if (mEnemies[i]->isRolling()) continue;
 
         if (mEnemies[i]->isFullyEncased()) {
-            if (mPlayer1.isAlive() &&
+			if (mPlayer1.isAlive() && 
                 mPlayer1.getBounds().intersects(
                     mEnemies[i]->getBounds()) &&
                 sf::Keyboard::isKeyPressed(sf::Keyboard::Down)) {
                 mEnemies[i]->startRolling(mPlayer1.isFacingRight(), 0);
                 mScore1 += mEnemies[i]->getPoints();
             }
-            if (mPlayer2.isAlive() &&
+			if (mPlayer2.isAlive() &&
                 mPlayer2.getBounds().intersects(
                     mEnemies[i]->getBounds()) &&
                 sf::Keyboard::isKeyPressed(sf::Keyboard::S)) {
@@ -927,16 +963,20 @@ void Game::checkPlayerEnemyCollision() {
         if (mEnemies[i]->isPartiallyEncased()) continue;
 
         if (mPlayer1.isAlive() && !mPlayer1.isRespawning() &&
+            !mPlayer1.isInBalloonMode()&&
             mPlayer1.getBounds().intersects(mEnemies[i]->getBounds()))
             mPlayer1.loseLife();
 
         if (mPlayer2.isAlive() && !mPlayer2.isRespawning() &&
+            !mPlayer2.isInBalloonMode()&&
             mPlayer2.getBounds().intersects(mEnemies[i]->getBounds()))
             mPlayer2.loseLife();
     }
 }
 
 void Game::checkRollingEnemyCollision() {
+
+
     for (int i = 0; i < mEnemyCount; i++) {
         if (!mEnemies[i]->isRolling()) continue;
         if (mEnemies[i]->isDead()) continue;
@@ -1094,7 +1134,7 @@ void Game::addPowerUp(PowerUp p) {
 void Game::spawnPowerUp(float x, float y) {
     // randomly pick power up type
     // gem appears more often than others
-    int roll = rand() % 10;
+    int roll = rand() % 9;
     PowerUpType type;
 
     if (roll < 4)       type = GEM;
@@ -1145,7 +1185,7 @@ void Game::applyPowerUp(PowerUpType type, int player) {
         switch (type) {
         case GEM:
             mGemCount1 += 10;
-            mScore1 += 500;
+         
             break;
         case SPEED_BOOST:
             mSpeedBoostTimer1 = 15.f;
@@ -1170,7 +1210,7 @@ void Game::applyPowerUp(PowerUpType type, int player) {
         switch (type) {
         case GEM:
             mGemCount2 += 10;
-            mScore2 += 500;
+         
             break;
         case SPEED_BOOST:
             mSpeedBoostTimer2 = 15.f;

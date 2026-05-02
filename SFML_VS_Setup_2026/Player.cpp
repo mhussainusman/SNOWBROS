@@ -3,35 +3,33 @@
 Player::Player(int playerIndex)
     : mSpeed(180.f),
     mVelocityY(0.f),
+    mVelocityX(0.f),
     mIsOnGround(false),
     mFacingRight(true),
     mPlayerIndex(playerIndex),
     mThrowKeyHeld(false),
-    mLives(3),            // 3 total = 2 shown in HUD + 1 base life
+    mLives(10),
     mRespawnTimer(0.f),
-    mRespawnTime(3.f),    // 3 seconds invincibility after respawn
+    mRespawnTime(3.f),
     mRespawning(false),
     mStartX(0.f),
     mStartY(0.f),
     mSpeedBoosted(false),
-    mBalloonMode(false) 
+    mBalloonMode(false)
 {
-
     mHitbox.setSize(sf::Vector2f(40.f, 50.f));
     mVisual.setSize(sf::Vector2f(40.f, 50.f));
     mHitbox.setFillColor(sf::Color::Transparent);
 
-    // player 1 respawns at midpoint of right half of ground
-    // player 2 respawns at midpoint of left half of ground
     if (mPlayerIndex == 0) {
         mStartX = 600.f;
         mStartY = 490.f;
-        mVisual.setFillColor(sf::Color(100, 180, 255)); // light blue
+        mVisual.setFillColor(sf::Color(100, 180, 255));
     }
     else {
         mStartX = 200.f;
         mStartY = 490.f;
-        mVisual.setFillColor(sf::Color(255, 165, 0)); // light green
+        mVisual.setFillColor(sf::Color(255, 165, 0));
     }
 
     mHitbox.setPosition(mStartX, mStartY);
@@ -39,31 +37,82 @@ Player::Player(int playerIndex)
 }
 
 void Player::update(float deltaTime,
-    const Platform* platforms,int platformCount) {
-
-    // if no lives left stop updating completely
+    const Platform* platforms, int platformCount)
+{
     if (mLives <= 0) return;
 
-    // respawn invincibility timer
-    // counts up every frame until 3 seconds passed
+    // respawn invincibility countdown
     if (mRespawning) {
         mRespawnTimer += deltaTime;
         if (mRespawnTimer >= mRespawnTime) {
-            mRespawning = false;   // invincibility over
-            mRespawnTimer = 0.f;   // reset for next death
+            mRespawning = false;
+            mRespawnTimer = 0.f;
         }
-        // player can still move during invincibility
-        // just cannot lose life
     }
 
-    
-    // horizontal movement
-    float moveX = 0.f;
-    float currentSpeed = mSpeedBoosted ? mSpeed * 1.5f : mSpeed;
+    // ── BALLOON MODE ─────────────────────────────────────────────
+    // works exactly like FlyingEnemy — free 2D movement
+    // gravity is off, player controls all 4 directions
+    // bounces off all screen edges, passes through platforms
+    if (mBalloonMode) {
 
+        mVelocityX = 0.f;
+        mVelocityY = 0.f;
+
+        float speed = BALLOON_SPEED;
+
+        if (mPlayerIndex == 0) {
+            // player 1 — arrow keys horizontal
+            // Up arrow = rise, Ctrl = descend
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
+                mVelocityX = -speed;
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right))
+                mVelocityX = speed;
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::Up))
+                mVelocityY = -speed;
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::RControl))
+                mVelocityY = speed;
+        }
+        else {
+            // player 2 — WASD horizontal
+            // W = rise, CapsLock = descend
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::A))
+                mVelocityX = -speed;
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::D))
+                mVelocityX = speed;
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::W)) 
+                mVelocityY = -speed;
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::LShift))
+                mVelocityY = speed;
+        }
+
+        // update facing direction
+        if (mVelocityX > 0) mFacingRight = true;
+        if (mVelocityX < 0) mFacingRight = false;
+
+        // move freely
+        mHitbox.move(mVelocityX * deltaTime, mVelocityY * deltaTime);
+        mVisual.move(mVelocityX * deltaTime, mVelocityY * deltaTime);
+
+        // bounce off screen edges — same as FlyingEnemy
+        handleBalloonCollision();
+
+        // track throw key for balloon mode too
+        bool throwPressed = false;
+        if (mPlayerIndex == 0)
+            throwPressed = sf::Keyboard::isKeyPressed(sf::Keyboard::Down);
+        else
+            throwPressed = sf::Keyboard::isKeyPressed(sf::Keyboard::S);
+        if (!throwPressed) mThrowKeyHeld = false;
+
+        return; // skip normal gravity and platform collision
+    }
+
+    // ── NORMAL MODE ──────────────────────────────────────────────
+    float currentSpeed = mSpeedBoosted ? mSpeed * 1.5f : mSpeed;
+    float moveX = 0.f;
 
     if (mPlayerIndex == 0) {
-        // player 1 — arrow keys
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
             moveX = -currentSpeed;
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right))
@@ -74,7 +123,6 @@ void Player::update(float deltaTime,
         }
     }
     else {
-        // player 2 — WASD
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::A))
             moveX = -currentSpeed;
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::D))
@@ -85,7 +133,6 @@ void Player::update(float deltaTime,
         }
     }
 
-    // track facing direction for snowball
     if (moveX > 0) mFacingRight = true;
     if (moveX < 0) mFacingRight = false;
 
@@ -93,24 +140,17 @@ void Player::update(float deltaTime,
     mVisual.move(moveX * deltaTime, 0.f);
 
     // gravity
-    if (mBalloonMode) {
-        mVelocityY = -80.f; // float upward slowly
-    }
-    else {
-        mVelocityY += GRAVITY * deltaTime;
-        if (mVelocityY > MAX_FALL_SPEED)
-            mVelocityY = MAX_FALL_SPEED;
-    }
+    mVelocityY += GRAVITY * deltaTime;
+    if (mVelocityY > MAX_FALL_SPEED)
+        mVelocityY = MAX_FALL_SPEED;
 
-    // balloon mode — float upward slowly
-   
     mHitbox.move(0.f, mVelocityY * deltaTime);
     mVisual.move(0.f, mVelocityY * deltaTime);
 
     // platform collision
     handleCollision(platforms, platformCount);
 
-    // screen edges
+    // screen edges — horizontal only, no vertical clamp in normal mode
     sf::Vector2f pos = mHitbox.getPosition();
     if (pos.x < 0.f) {
         mHitbox.setPosition(0.f, pos.y);
@@ -120,90 +160,59 @@ void Player::update(float deltaTime,
         mHitbox.setPosition(800.f - mHitbox.getSize().x, pos.y);
         mVisual.setPosition(800.f - mHitbox.getSize().x, pos.y);
     }
-    // stop player floating above the top of the screen
+
+    // throw key tracking
+    bool throwPressed = false;
+    if (mPlayerIndex == 0)
+        throwPressed = sf::Keyboard::isKeyPressed(sf::Keyboard::Down);
+    else
+        throwPressed = sf::Keyboard::isKeyPressed(sf::Keyboard::S);
+    if (!throwPressed) mThrowKeyHeld = false;
+}
+
+// bounce off all 4 screen edges during balloon mode
+// identical logic to FlyingEnemy screen bounce
+void Player::handleBalloonCollision() {
+    sf::Vector2f pos = mHitbox.getPosition();
+    float w = mHitbox.getSize().x;
+    float h = mHitbox.getSize().y;
+
+    // left edge
+    if (pos.x < 0.f) {
+        mHitbox.setPosition(0.f, pos.y);
+        mVisual.setPosition(0.f, pos.y);
+        mVelocityX = -mVelocityX; // reverse horizontal
+    }
+    // right edge
+    if (pos.x + w > 800.f) {
+        mHitbox.setPosition(800.f - w, pos.y);
+        mVisual.setPosition(800.f - w, pos.y);
+        mVelocityX = -mVelocityX;
+    }
+    // top edge
     if (pos.y < 0.f) {
         mHitbox.setPosition(pos.x, 0.f);
         mVisual.setPosition(pos.x, 0.f);
-        mVelocityY = 0.f; // stop upward movement at ceiling
+        mVelocityY = -mVelocityY; // reverse vertical
     }
-
-    // track throw key
-    bool throwPressed = false;
-    if (mPlayerIndex == 0)
-        throwPressed = sf::Keyboard::isKeyPressed(sf::Keyboard::Down);
-    else
-        throwPressed = sf::Keyboard::isKeyPressed(sf::Keyboard::S);
-
-    if (!throwPressed)
-        mThrowKeyHeld = false;
-
-    // speed boost doubles movement speed
-   
-}
-
-bool Player::wantsToThrow() {
-    // if dead dont throw
-    if (mLives <= 0) return false;
-
-    bool throwPressed = false;
-    if (mPlayerIndex == 0)
-        throwPressed = sf::Keyboard::isKeyPressed(sf::Keyboard::Down);
-    else
-        throwPressed = sf::Keyboard::isKeyPressed(sf::Keyboard::S);
-
-        if (throwPressed && !mThrowKeyHeld) {
-        mThrowKeyHeld = true;
-        return true;
-    }
-    return false;
-}
-
-void Player::loseLife() {
-    // ignore if already respawning — still invincible
-    if (mRespawning) return;
-
-    // ignore if already dead
-    if (mLives <= 0) return;
-
-    mLives--;
-
-    if (mLives > 0) {
-        // still has lives — respawn at starting position
-        mHitbox.setPosition(mStartX, mStartY);
-        mVisual.setPosition(mStartX, mStartY);
-        mVelocityY = 0.f;
-        mRespawnTimer = 0.f;  // reset timer from zero
-        mRespawning = true;   // start invincibility
-    }
-    else {
-        // no lives left — move off screen so player disappears
-        mHitbox.setPosition(-200.f, -200.f);
-        mVisual.setPosition(-200.f, -200.f);
-        mVelocityY = 0.f;
+    // bottom edge — treat ground as a bounce too while floating
+    if (pos.y + h > 660.f) {
+        mHitbox.setPosition(pos.x, 660.f - h);
+        mVisual.setPosition(pos.x, 660.f - h);
+        mVelocityY = -mVelocityY;
     }
 }
 
-int Player::getLives() const {
-    return mLives;
-}
-
-bool Player::isAlive() const {
-    return mLives > 0;
-}
-
-bool Player::isRespawning() const {
-    return mRespawning;
-}
-
-void Player::handleCollision(const Platform* platforms, int platformCount) {
+void Player::handleCollision(const Platform* platforms,
+    int platformCount)
+{
     mIsOnGround = false;
 
     for (int i = 0; i < platformCount; i++) {
         sf::FloatRect player = mHitbox.getGlobalBounds();
         sf::FloatRect plat = platforms[i].getBounds();
 
-        if (!player.intersects(plat))
-            continue;
+        if (!player.intersects(plat)) continue;
 
         float overlapTop = (player.top + player.height) - plat.top;
 
@@ -216,6 +225,42 @@ void Player::handleCollision(const Platform* platforms, int platformCount) {
     }
 }
 
+bool Player::wantsToThrow() {
+    if (mLives <= 0) return false;
+
+    bool throwPressed = false;
+    if (mPlayerIndex == 0)
+        throwPressed = sf::Keyboard::isKeyPressed(sf::Keyboard::Down);
+    else
+        throwPressed = sf::Keyboard::isKeyPressed(sf::Keyboard::S);
+
+    if (throwPressed && !mThrowKeyHeld) {
+        mThrowKeyHeld = true;
+        return true;
+    }
+    return false;
+}
+
+void Player::loseLife() {
+    if (mRespawning) return;
+    if (mLives <= 0)  return;
+
+    mLives--;
+
+    if (mLives > 0) {
+        mHitbox.setPosition(mStartX, mStartY);
+        mVisual.setPosition(mStartX, mStartY);
+        mVelocityY = 0.f;
+        mRespawnTimer = 0.f;
+        mRespawning = true;
+    }
+    else {
+        mHitbox.setPosition(-200.f, -200.f);
+        mVisual.setPosition(-200.f, -200.f);
+        mVelocityY = 0.f;
+    }
+}
+
 void Player::resetLives() {
     mLives = 10;
     mRespawning = false;
@@ -225,25 +270,10 @@ void Player::resetLives() {
     mVelocityY = 0.f;
 }
 
-
-void Player::draw(sf::RenderWindow& window, bool showHitbox) {
-
-    // if dead dont draw anything
-    if (mLives <= 0) return;
-
-    if (!showHitbox) {
-        window.draw(mVisual);
-    }
-    else {
-        sf::RectangleShape debugBox;
-        debugBox.setPosition(mHitbox.getPosition());
-        debugBox.setSize(mHitbox.getSize());
-        debugBox.setFillColor(sf::Color::Transparent);
-        debugBox.setOutlineColor(sf::Color::Green);
-        debugBox.setOutlineThickness(2.f);
-        window.draw(debugBox);
-    }
-}
+int  Player::getLives()      const { return mLives; }
+bool Player::isAlive()       const { return mLives > 0; }
+bool Player::isRespawning()  const { return mRespawning; }
+bool Player::isFacingRight() const { return mFacingRight; }
 
 sf::Vector2f Player::getPosition() const {
     return mHitbox.getPosition();
@@ -253,19 +283,26 @@ sf::FloatRect Player::getBounds() const {
     return mHitbox.getGlobalBounds();
 }
 
-bool Player::isFacingRight() const {
-    return mFacingRight;
+void Player::draw(sf::RenderWindow& window, bool showHitbox) {
+    if (mLives <= 0) return;
+    window.draw(mVisual);
+
+    if (showHitbox) {
+        sf::RectangleShape debug;
+        debug.setPosition(mHitbox.getPosition());
+        debug.setSize(mHitbox.getSize());
+        debug.setFillColor(sf::Color::Transparent);
+        debug.setOutlineColor(sf::Color::Green);
+        debug.setOutlineThickness(2.f);
+        window.draw(debug);
+    }
 }
 
-// power ups
-void Player::setSpeedBoost(bool active) {
-    mSpeedBoosted = active;
-}
-
+void Player::setSpeedBoost(bool active) { mSpeedBoosted = active; }
 void Player::setBalloonMode(bool active) {
     mBalloonMode = active;
+    // reset velocities when mode changes
+    mVelocityX = 0.f;
+    mVelocityY = 0.f;
 }
-
-void Player::addLife() {
-    mLives++;
-}
+void Player::addLife() { mLives++; }

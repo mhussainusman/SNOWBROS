@@ -47,7 +47,6 @@ private:
     void updateCharSelect();
     void updateMainMenu();
     void updatePlaying(float deltaTime);
-    void updateLevelComplete(float deltaTime);
     void updatePaused();
     void updateGameOver();
     void updateVictory();
@@ -101,8 +100,7 @@ private:
     int mScore2;
     bool mGameOver;
     int mCurrentLevel;
-    float mLevelCompleteTimer; // how long level complete screen shows
-
+    
     // --- SYSTEMS ---
     HUD mHUD;
     LevelManager mLevelManager;
@@ -156,4 +154,7 @@ private:
     void updatePowerUpEffects(float deltaTime);
 
     void applyPowerUp(PowerUpType type, int player);
+    
+
+
 };

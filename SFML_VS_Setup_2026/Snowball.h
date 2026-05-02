@@ -18,6 +18,7 @@ public:
     bool isExpired() const;          // true when should be removed
     void setExpired();               // called when hits enemy or wall
     int getPlayerIndex() const;      // which player threw this
+    void setMaxDistance(float dist);
 
 private:
     sf::RectangleShape mHitbox;   // collision box
@@ -29,4 +30,5 @@ private:
     float mMaxDistance;        // disappears after this distance
     bool mExpired;             // true when should be removed
     int mPlayerIndex;          // 0 = player1, 1 = player2
+   
 };

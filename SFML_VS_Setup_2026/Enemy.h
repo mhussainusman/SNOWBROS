@@ -41,6 +41,7 @@ public:
     bool isPartiallyEncased() const; // true when hit once but not fully encased
 
     int getKickedByPlayer() const;
+    void instantEncase();
 
 protected:
 
@@ -75,6 +76,7 @@ protected:
   
   void applyGravity(float deltaTime, const Platform* platforms, int platformCount);
   int mKickedByPlayer;
+  bool mHasRebounded = false;  // true after first wall bounce
 
 };
 

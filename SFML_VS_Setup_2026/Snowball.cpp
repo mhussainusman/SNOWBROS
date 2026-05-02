@@ -21,23 +21,22 @@ Snowball::Snowball(float x, float y, bool movingRight, int playerIndex)
 }
 
 void Snowball::update(float deltaTime) {
+    if (mExpired) return;
 
-    // move left or right depending on direction
+    // move in current direction
     float moveX = mMovingRight ? mSpeed : -mSpeed;
     mHitbox.move(moveX * deltaTime, 0.f);
-    mVisual.move(moveX * deltaTime, 0.f);
+    mVisual.setPosition(mHitbox.getPosition());
 
-    // track total distance travelled
     mDistanceTravelled += mSpeed * deltaTime;
-
-    // expire when max distance reached
     if (mDistanceTravelled >= mMaxDistance)
         mExpired = true;
-
-    // expire if goes off screen
+    
     sf::Vector2f pos = mHitbox.getPosition();
     if (pos.x > 820.f || pos.x + mHitbox.getSize().x < -20.f)
         mExpired = true;
+
+  
 }
 
 void Snowball::draw(sf::RenderWindow& window, bool showHitbox) {
@@ -72,4 +71,7 @@ void Snowball::setExpired() {
 
 int Snowball::getPlayerIndex() const {
     return mPlayerIndex;
+}
+void Snowball::setMaxDistance(float dist) {
+    mMaxDistance = dist;
 }

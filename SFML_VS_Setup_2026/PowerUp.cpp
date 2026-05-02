@@ -6,7 +6,6 @@ PowerUp::PowerUp()
     mCollected(false),
     mExpired(false),
     mLifeTimer(0.f),
-    mBobTimer(0.f),
     mColor(sf::Color::Yellow) {
     mHitbox.setSize(sf::Vector2f(20.f, 20.f));
     mVisual.setSize(sf::Vector2f(20.f, 20.f));
@@ -18,8 +17,8 @@ PowerUp::PowerUp(float x, float y, PowerUpType type)
     : mType(type),
     mCollected(false),
     mExpired(false),
-    mLifeTimer(0.f),
-    mBobTimer(0.f) {
+    mLifeTimer(0.f)
+     {
 
     // set color based on type
     switch (type) {
@@ -42,13 +41,6 @@ PowerUp::PowerUp(float x, float y, PowerUpType type)
 
 void PowerUp::update(float deltaTime) {
     if (mCollected || mExpired) return;
-
-    // bob up and down for visual effect
-    mBobTimer += deltaTime;
-    float bobOffset = sin(mBobTimer * 3.f) * 3.f;
-    mVisual.setPosition(
-        mHitbox.getPosition().x,
-        mHitbox.getPosition().y + bobOffset);
 
     // disappear after 10 seconds if not collected
     mLifeTimer += deltaTime;

@@ -13,7 +13,9 @@ Enemy::Enemy(float x, float y, int hitsToEncase)
     mRollingRight(true),
     mMeltTimer(0.f),
     mMeltTime(0.f),
-    mKickedByPlayer(0) {
+    mKickedByPlayer(0),
+    mHasRebounded(false)
+{
 
     mHitbox.setPosition(x, y);
     mHitbox.setFillColor(sf::Color::Transparent);
@@ -55,6 +57,7 @@ void Enemy::startRolling(bool kickedRight, int playerIndex) {
     mRollingRight = kickedRight;
     mMeltTimer = 0.f;
     mKickedByPlayer = playerIndex;
+    mHasRebounded = false;
 }
 
 void Enemy::updateMelt(float deltaTime) {
@@ -94,10 +97,29 @@ void Enemy::updateRolling(float deltaTime, const Platform* platforms, int platfo
             mVelocityY = 0.f;
         }
     }
-
     sf::Vector2f pos = mHitbox.getPosition();
-    if (pos.x > 850.f || pos.x + mHitbox.getSize().x < -50.f)
-        mDead = true;
+    float w = mHitbox.getSize().x;
+
+    // first bounce — check current direction's wall
+    if (!mHasRebounded) {
+        if (mRollingRight && pos.x + w >= 800.f) {
+            mRollingRight = false;
+            mHasRebounded = true;
+            mHitbox.setPosition(800.f - w, pos.y);
+            mVisual.setPosition(mHitbox.getPosition());
+        }
+        else if (!mRollingRight && pos.x <= 0.f) {
+            mRollingRight = true;
+            mHasRebounded = true;
+            mHitbox.setPosition(0.f, pos.y);
+            mVisual.setPosition(mHitbox.getPosition());
+        }
+    }
+    else {
+        // after rebound — die when reaching any screen edge
+        if (pos.x + w < -50.f || pos.x > 850.f)
+            mDead = true;
+    }
 }
 
 void Enemy::applyGravity(float deltaTime, const Platform* platforms, int platformCount) {
@@ -131,6 +153,14 @@ void Enemy::setDead() { mDead = true; }
 bool Enemy::isPartiallyEncased() const { return mSnowHits > 0 && !mEncased; }
 
 int Enemy::getKickedByPlayer() const { return mKickedByPlayer; }
+
+void Enemy::instantEncase() {
+    mSnowHits = mHitsToEncase;
+    mEncased = true;
+    mMeltTime = 6.f;
+    mMeltTimer = 0.f;
+    mVisual.setFillColor(sf::Color::White);
+}
 
 // --- BOTOM ---
 
