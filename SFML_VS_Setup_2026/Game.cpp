@@ -1,4 +1,9 @@
 #include "Game.h"
+<<<<<<< Updated upstream
+=======
+#include "AccountManager.h"
+
+>>>>>>> Stashed changes
  
 // CONSTRUCTOR
  
@@ -24,6 +29,7 @@ Game::Game()
     mP1Selected(false),
     mP2Selected(false),
     mMenuSelection(0),
+<<<<<<< Updated upstream
     mPowerUpCount(0), mPowerUpCapacity(20),
     mSpeedBoostTimer1(0.f), mSpeedBoostTimer2(0.f),
     mBalloonTimer1(0.f), mBalloonTimer2(0.f),
@@ -31,6 +37,11 @@ Game::Game()
     mDistanceBoost1(false), mDistanceBoost2(false),
     mGemCount1(0), mGemCount2(0)
 {
+=======
+    mLevelCompleteTimer(0.f),
+    mLeaderboardKeyHeld(false),
+    mScoreSaved(false) {
+>>>>>>> Stashed changes
 
     mPlatforms = new Platform[mPlatformCapacity];
     mEnemies = new Enemy * [mEnemyCapacity];
@@ -44,6 +55,7 @@ Game::Game()
         "assets/Fonts/ps2.ttf");
     mHUD.loadFont(
         "assets/Fonts/ps2.ttf");
+    mLeaderboard.setFont(mFont);
 
     // setup 3 characters
     mCharacters[0] = { "Nick", sf::Color(100, 180, 255) };  // blue
@@ -101,24 +113,38 @@ void Game::processEvents() {
                 else if (!mTypingUsername && !mPasswordInput.empty())
                     mPasswordInput.pop_back();
             }
+           
             else if (c == '\r' || c == '\n') {
-                // enter key
                 if (mTypingUsername) {
-                    mTypingUsername = false; // move to password
+                    mTypingUsername = false;
                 }
                 else {
-                    // try to login
-                    if (checkLogin(mUsernameInput, mPasswordInput)) {
+                    PlayerAccount acc;
+                    auto result = mAccountManager.tryLogin(
+                        mUsernameInput, mPasswordInput, acc);
+
+                    if (result == Account_Manager::Result::OK) {
                         mLoggedInUser = mUsernameInput;
-                        mLoginMessage = "Login successful!";
+                        mLoginMessage = "LOGIN SUCCESSFUL!";
+                        mLoginSuccess = true;
                         mState = CHARACTER_SELECT;
                     }
-                    else {
-                        // save new user and login
-                        saveLogin(mUsernameInput, mPasswordInput);
+                    else if (result == Account_Manager::Result::USER_NOT_FOUND) {
+                        // new player — auto register
+                        mAccountManager.registerUser(mUsernameInput, mPasswordInput);
                         mLoggedInUser = mUsernameInput;
-                        mLoginMessage = "New account created!";
+                        mLoginMessage = "NEW ACCOUNT CREATED!";
+                        mLoginSuccess = true;
                         mState = CHARACTER_SELECT;
+                    }
+                    else if (result == Account_Manager::Result::WRONG_PASSWORD) {
+                        mLoginMessage = "WRONG PASSWORD. TRY AGAIN.";
+                        mLoginSuccess = false;
+                        mPasswordInput.clear();
+                    }
+                    else if (result == Account_Manager::Result::EMPTY_FIELD) {
+                        mLoginMessage = "ENTER USERNAME AND PASSWORD.";
+                        mLoginSuccess = false;
                     }
                 }
             }
@@ -187,6 +213,7 @@ void Game::processEvents() {
 						mCurrentLevel = 1; // you can start of from any level, through this
                         mScore1 = 0;
                         mScore2 = 0;
+                        mScoreSaved = false;
                         mGameOver = false;        // ← reset game over flag
                         mPlayer1.resetLives();    // ← reset player lives
                         mPlayer2.resetLives();    // ← reset player lives
@@ -200,7 +227,8 @@ void Game::processEvents() {
                         mState = PLAYING;
                     }
                     else if (mMenuSelection == 2) {
-                        // leaderboard — coming soon
+                        mLeaderboardKeyHeld = true;
+                        mState = LEADERBOARD_SCREEN;
                     }
                     else if (mMenuSelection == 3) {
                         mWindow.close();
@@ -273,6 +301,7 @@ void Game::processEvents() {
 
 void Game::update(float deltaTime) {
     switch (mState) {
+<<<<<<< Updated upstream
     case LOGIN:            updateLogin(); break;
     case CHARACTER_SELECT: updateCharSelect(); break;
     case MAIN_MENU:        updateMainMenu(); break;
@@ -280,6 +309,17 @@ void Game::update(float deltaTime) {
     case PAUSED:           updatePaused(); break;
     case GAME_OVER:        updateGameOver(); break;
     case VICTORY:          updateVictory(); break;
+=======
+    case LOGIN:              updateLogin(); break;
+    case CHARACTER_SELECT:   updateCharSelect(); break;
+    case MAIN_MENU:          updateMainMenu(); break;
+    case PLAYING:            updatePlaying(deltaTime); break;
+    case LEVEL_COMPLETE:     updateLevelComplete(deltaTime); break;
+    case PAUSED:             updatePaused(); break;
+    case GAME_OVER:          updateGameOver(); break;
+    case VICTORY:            updateVictory(); break;
+    case LEADERBOARD_SCREEN: updateLeaderboard(deltaTime); break;
+>>>>>>> Stashed changes
     }
 }
 
@@ -390,11 +430,18 @@ void Game::updatePaused() {
 }
 
 void Game::updateGameOver() {
-    // nothing — handled in processEvents
+    if (!mScoreSaved) {
+        saveScoreToLeaderboard();
+        mScoreSaved = true;
+    }
 }
 
+
 void Game::updateVictory() {
-    // nothing — handled in processEvents
+    if (!mScoreSaved) {
+        saveScoreToLeaderboard();
+        mScoreSaved = true;
+    }
 }
 
  
@@ -402,6 +449,7 @@ void Game::updateVictory() {
  
 
 void Game::render() {
+    if (mState == LEADERBOARD_SCREEN) return;
     mWindow.clear(sf::Color(20, 20, 40));
 
     switch (mState) {
@@ -418,6 +466,39 @@ void Game::render() {
     mWindow.display();
 }
 
+//======================================================
+//leaderboard update
+void Game::saveScoreToLeaderboard() {
+    int best = (mScore1 >= mScore2) ? mScore1 : mScore2;
+    mLeaderboard.addEntry(mLoggedInUser, best, mCurrentLevel);
+}
+
+void Game::updateLeaderboard(float deltaTime) {
+    // keep drawing while the key that opened this screen is held
+    // so the same key-press doesn't instantly close it
+    if (mLeaderboardKeyHeld) {
+        if (!sf::Keyboard::isKeyPressed(sf::Keyboard::Escape) &&
+            !sf::Keyboard::isKeyPressed(sf::Keyboard::BackSpace))
+            mLeaderboardKeyHeld = false;
+
+        mWindow.clear(sf::Color(5, 10, 35));
+        mLeaderboard.draw(mWindow, deltaTime);
+        mWindow.display();
+        return;
+    }
+
+    mWindow.clear(sf::Color(5, 10, 35));
+    bool goBack = mLeaderboard.draw(mWindow, deltaTime);
+    mWindow.display();
+
+    if (goBack) {
+        mLeaderboardKeyHeld = true;   // debounce the back key
+        mState = MAIN_MENU;
+    }
+}
+
+//===================================================================
+
 // helper — draws text centered horizontally at given Y
 void Game::drawCenteredText(sf::Text& text, float y) {
     float x = (800.f - text.getGlobalBounds().width) / 2.f;
@@ -428,9 +509,10 @@ void Game::drawCenteredText(sf::Text& text, float y) {
  
 // LOGIN SCREEN
  
-
+// ---- renderLogin() ----------------------------------------------
 void Game::renderLogin() {
-    // title
+
+    // Title
     sf::Text title;
     title.setFont(mFont);
     title.setString("SNOW BROS");
@@ -438,7 +520,7 @@ void Game::renderLogin() {
     title.setFillColor(sf::Color::Cyan);
     drawCenteredText(title, 80.f);
 
-    // username label
+    // Username label
     sf::Text userLabel;
     userLabel.setFont(mFont);
     userLabel.setString("USERNAME:");
@@ -447,25 +529,24 @@ void Game::renderLogin() {
     userLabel.setPosition(150.f, 220.f);
     mWindow.draw(userLabel);
 
-    // username input box
+    bool typingUser = (mLoginState == LoginState::TYPING_USER);
+
     sf::RectangleShape userBox(sf::Vector2f(400.f, 35.f));
     userBox.setPosition(150.f, 245.f);
-    userBox.setFillColor(mTypingUsername ?
-        sf::Color(60, 60, 100) : sf::Color(40, 40, 60));
-    userBox.setOutlineColor(mTypingUsername ?
-        sf::Color::Cyan : sf::Color::White);
+    userBox.setFillColor(typingUser ? sf::Color(60, 60, 100) : sf::Color(40, 40, 60));
+    userBox.setOutlineColor(typingUser ? sf::Color::Cyan : sf::Color::White);
     userBox.setOutlineThickness(2.f);
     mWindow.draw(userBox);
 
     sf::Text userText;
     userText.setFont(mFont);
-    userText.setString(mUsernameInput + (mTypingUsername ? "_" : ""));
+    userText.setString(mUsernameInput + (typingUser ? "_" : ""));
     userText.setCharacterSize(14);
     userText.setFillColor(sf::Color::White);
     userText.setPosition(160.f, 252.f);
     mWindow.draw(userText);
 
-    // password label
+    // Password label
     sf::Text passLabel;
     passLabel.setFont(mFont);
     passLabel.setString("PASSWORD:");
@@ -474,30 +555,25 @@ void Game::renderLogin() {
     passLabel.setPosition(150.f, 310.f);
     mWindow.draw(passLabel);
 
-    // password input box
+    bool typingPass = (mLoginState == LoginState::TYPING_PASS);
+
     sf::RectangleShape passBox(sf::Vector2f(400.f, 35.f));
     passBox.setPosition(150.f, 335.f);
-    passBox.setFillColor(!mTypingUsername ?
-        sf::Color(60, 60, 100) : sf::Color(40, 40, 60));
-    passBox.setOutlineColor(!mTypingUsername ?
-        sf::Color::Cyan : sf::Color::White);
+    passBox.setFillColor(typingPass ? sf::Color(60, 60, 100) : sf::Color(40, 40, 60));
+    passBox.setOutlineColor(typingPass ? sf::Color::Cyan : sf::Color::White);
     passBox.setOutlineThickness(2.f);
     mWindow.draw(passBox);
 
-    // show asterisks for password
-    std::string stars = "";
-    for (int i = 0; i < mPasswordInput.size(); i++)
-        stars += "*";
-
+    std::string stars(mPasswordInput.size(), '*');
     sf::Text passText;
     passText.setFont(mFont);
-    passText.setString(stars + (!mTypingUsername ? "_" : ""));
+    passText.setString(stars + (typingPass ? "_" : ""));
     passText.setCharacterSize(14);
     passText.setFillColor(sf::Color::White);
     passText.setPosition(160.f, 342.f);
     mWindow.draw(passText);
 
-    // instructions
+    // Hints
     sf::Text hint;
     hint.setFont(mFont);
     hint.setString("PRESS ENTER TO CONFIRM EACH FIELD");
@@ -505,7 +581,6 @@ void Game::renderLogin() {
     hint.setFillColor(sf::Color(150, 150, 150));
     drawCenteredText(hint, 400.f);
 
-    // new user hint
     sf::Text newUser;
     newUser.setFont(mFont);
     newUser.setString("NEW USER? JUST TYPE AND PRESS ENTER");
@@ -513,14 +588,113 @@ void Game::renderLogin() {
     newUser.setFillColor(sf::Color(150, 150, 150));
     drawCenteredText(newUser, 425.f);
 
-    // message
+    // Message box — red for errors, green for success
     if (!mLoginMessage.empty()) {
+        if (!mLoginSuccess) {
+            // Dark red box with red outline for errors
+            sf::RectangleShape errorBox(sf::Vector2f(600.f, 40.f));
+            errorBox.setPosition(80.f, 460.f);
+            errorBox.setFillColor(sf::Color(80, 0, 0));
+            errorBox.setOutlineColor(sf::Color::Red);
+            errorBox.setOutlineThickness(2.f);
+            mWindow.draw(errorBox);
+        }
+
         sf::Text msg;
         msg.setFont(mFont);
         msg.setString(mLoginMessage);
         msg.setCharacterSize(14);
-        msg.setFillColor(sf::Color::Green);
-        drawCenteredText(msg, 470.f);
+        msg.setFillColor(mLoginSuccess ? sf::Color::Green : sf::Color::Red);
+        drawCenteredText(msg, 473.f);
+    }
+}
+
+// ---- handleLoginEvent() -----------------------------------------
+// Call this from your event loop:
+//   case GameState::LOGIN:
+//       handleLoginEvent(event);
+//       break;
+
+void Game::handleLoginEvent(const sf::Event& event) {
+
+    if (event.type == sf::Event::TextEntered) {
+        if (event.text.unicode >= 32 && event.text.unicode < 127) {
+            char c = static_cast<char>(event.text.unicode);
+            if (mLoginState == LoginState::TYPING_USER)
+                mUsernameInput += c;
+            else if (mLoginState == LoginState::TYPING_PASS)
+                mPasswordInput += c;
+        }
+    }
+
+    if (event.type == sf::Event::KeyPressed) {
+
+        // Backspace
+        if (event.key.code == sf::Keyboard::BackSpace) {
+            if (mLoginState == LoginState::TYPING_USER && !mUsernameInput.empty())
+                mUsernameInput.pop_back();
+            else if (mLoginState == LoginState::TYPING_PASS && !mPasswordInput.empty())
+                mPasswordInput.pop_back();
+            mLoginMessage.clear();
+        }
+
+        // Tab — switch field
+        if (event.key.code == sf::Keyboard::Tab) {
+            mLoginState = (mLoginState == LoginState::TYPING_USER)
+                ? LoginState::TYPING_PASS
+                : LoginState::TYPING_USER;
+            mLoginMessage.clear();
+        }
+
+        // Enter — advance or submit
+        if (event.key.code == sf::Keyboard::Enter) {
+
+            if (mLoginState == LoginState::TYPING_USER) {
+                mLoginState = LoginState::TYPING_PASS;
+                mLoginMessage.clear();
+            }
+            else if (mLoginState == LoginState::TYPING_PASS) {
+
+                PlayerAccount acc;
+                Account_Manager::Result result =
+                    mAccountManager.tryLogin(mUsernameInput, mPasswordInput, acc);
+
+                if (result == Account_Manager::Result::OK) {
+                    mCurrentPlayer = acc;
+                    mLoginSuccess = true;
+                    mLoginMessage = "WELCOME BACK, " + acc.username + "!";
+                    mLoginState = LoginState::DONE;
+                    mState = GameState::MAIN_MENU; // <-- change to your state
+
+                }
+                else if (result == Account_Manager::Result::USER_NOT_FOUND) {
+                    // New player — auto register then log in
+                    Account_Manager::Result reg =
+                        mAccountManager.registerUser(mUsernameInput, mPasswordInput);
+
+                    if (reg == Account_Manager::Result::OK) {
+                        mAccountManager.tryLogin(mUsernameInput, mPasswordInput, mCurrentPlayer);
+                        mLoginSuccess = true;
+                        mLoginMessage = "ACCOUNT CREATED! WELCOME, " + mUsernameInput + "!";
+                        mLoginState = LoginState::DONE;
+                        mState = GameState::MAIN_MENU; // <-- change to your state
+                    }
+                    else {
+                        mLoginSuccess = false;
+                        mLoginMessage = "REGISTRATION FAILED. TRY AGAIN.";
+                    }
+                }
+                else if (result == Account_Manager::Result::WRONG_PASSWORD) {
+                    mLoginSuccess = false;
+                    mLoginMessage = "WRONG PASSWORD. TRY AGAIN.";
+                    mPasswordInput.clear();
+                }
+                else if (result == Account_Manager::Result::EMPTY_FIELD) {
+                    mLoginSuccess = false;
+                    mLoginMessage = "USERNAME AND PASSWORD REQUIRED.";
+                }
+            }
+        }
     }
 }
 

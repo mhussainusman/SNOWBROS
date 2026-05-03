@@ -6,9 +6,15 @@
 #include "Snowball.h"
 #include "HUD.h"
 #include "LevelManager.h"
+#include "AccountManager.h"
+#include "Leaderboard.h"
 #include <fstream>
 #include <string>
+<<<<<<< Updated upstream
 #include "PowerUp.h"
+=======
+using namespace std;
+>>>>>>> Stashed changes
 
 // all possible game screens
 enum GameState {
@@ -19,13 +25,12 @@ enum GameState {
     LEVEL_COMPLETE,
     PAUSED,
     GAME_OVER,
-    VICTORY
 };
 
 // character data — name and color for now
 // sprite added later
 struct Character {
-    std::string name;
+    string name;
     sf::Color color;
 };
 
@@ -36,6 +41,28 @@ public:
     void run();
 
 private:
+    //
+   
+    void handleLoginEvent(const sf::Event& event);
+
+    //---login check---
+    
+    Account_Manager mAccountManager;
+    PlayerAccount  mCurrentPlayer;
+    bool mLoginSuccess = false;
+
+    // --- LOGIN ---
+    enum class LoginState { TYPING_USER, TYPING_PASS, DONE };
+    LoginState  mLoginState = LoginState::TYPING_USER;
+    string mUsernameInput;
+    string mPasswordInput;
+    string mLoginMessage;
+    string mLoggedInUser;
+  
+    bool mTypingUsername;
+
+
+   
 
     // --- GAME LOOP ---
     void processEvents();
@@ -43,6 +70,7 @@ private:
     void render();
 
     // --- SCREEN UPDATES ---
+    void updateLeaderboard(float deltaTime);
     void updateLogin();
     void updateCharSelect();
     void updateMainMenu();
@@ -102,16 +130,12 @@ private:
     int mCurrentLevel;
     
     // --- SYSTEMS ---
+    Leaderboard  mLeaderboard;
     HUD mHUD;
     LevelManager mLevelManager;
 
-    // --- LOGIN ---
-    std::string mUsernameInput;   // what player is typing
-    std::string mPasswordInput;   // password input
-    bool mTypingUsername;         // true = typing username, false = password
-    std::string mLoginMessage;    // error or success message
-    std::string mLoggedInUser;    // username after successful login
-
+            // true = typing username, false = password
+  
     // --- CHARACTER SELECT ---
     Character mCharacters[3];     // 3 available characters
     int mP1CharIndex;             // which character player 1 selected
@@ -128,6 +152,7 @@ private:
     void addSnowball(Snowball s);
     bool checkLogin(const std::string& user, const std::string& pass);
     void saveLogin(const std::string& user, const std::string& pass);
+<<<<<<< Updated upstream
 
     // power ups
     PowerUp* mPowerUps;
@@ -157,4 +182,9 @@ private:
     
 
 
+=======
+    void saveScoreToLeaderboard();
+    bool mLeaderboardKeyHeld;
+    bool mScoreSaved;
+>>>>>>> Stashed changes
 };
