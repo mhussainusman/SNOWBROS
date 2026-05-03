@@ -16,7 +16,7 @@ using namespace std;
 // all possible game screens
 enum GameState {
     LOGIN,
-    REGISTER,
+    REGISTER,          
     CHARACTER_SELECT,
     MAIN_MENU,
     PLAYING,
@@ -45,7 +45,7 @@ private:
     // ---------------------------------------------------------------
     // LOGIN SYSTEM
     // ---------------------------------------------------------------
-
+     
     sf::Texture mLoginBgTexture;
     sf::Sprite  mLoginBgSprite;
 

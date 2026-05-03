@@ -10,13 +10,14 @@ public:
     // load font from file
     bool loadFont(const std::string& fontPath);
 
-    // update HUD values every frame
+    // update HUD values every frame (gems = shared pool)
     void update(int score1, int lives1,
         int score2, int lives2,
-        int level);
+        int level, int gems = 0);
 
     // draw HUD on top of everything
     void draw(sf::RenderWindow& window);
+
 
 private:
     sf::Font mFont;
@@ -33,6 +34,9 @@ private:
 
     // level — top center
     sf::Text mLevelText;
+
+    // shared gems — bottom center
+    sf::Text mGemsText;
 
     // helper to setup text properties
     void setupText(sf::Text& text, int size,

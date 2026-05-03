@@ -73,3 +73,8 @@ void Snowball::setExpired() {
 int Snowball::getPlayerIndex() const {
     return mPlayerIndex;
 }
+
+void Snowball::applyPowerBoost() {
+    mSpeed = 600.f;           // faster travel
+    mMaxDistance = 800.f;     // guaranteed full screen width (already max, makes explicit)
+}

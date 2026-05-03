@@ -39,6 +39,10 @@ bool HUD::loadFont(const std::string& fontPath) {
     setupText(mLevelText, 12, sf::Color::Green, 360.f, 27.f);
     mLevelText.setString("LEVEL 1");
 
+    // shared gems — top center below level
+    setupText(mGemsText, 11, sf::Color(255, 215, 0), 340.f, 45.f);
+    mGemsText.setString("GEMS: 0");
+
     return true;
 }
 
@@ -52,7 +56,7 @@ void HUD::setupText(sf::Text& text, int size,
 
 void HUD::update(int score1, int lives1,
     int score2, int lives2,
-    int level) {
+    int level, int gems) {
 
     // update score — pad with zeros to 6 digits
     // like original arcade game display
@@ -79,6 +83,9 @@ void HUD::update(int score1, int lives1,
     // update level
     mLevelText.setString("LEVEL " +
         std::to_string(level));
+
+    // update shared gems
+    mGemsText.setString("* " + std::to_string(gems) + " GEMS");
 }
 
 void HUD::draw(sf::RenderWindow& window) {
@@ -92,4 +99,5 @@ void HUD::draw(sf::RenderWindow& window) {
     window.draw(mScore2Text);
     window.draw(mLives2Text);
     window.draw(mLevelText);
+    window.draw(mGemsText);
 }

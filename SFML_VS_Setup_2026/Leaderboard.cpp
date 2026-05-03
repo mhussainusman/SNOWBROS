@@ -43,10 +43,10 @@ void Leaderboard::setFont(const sf::Font& font) {
 //  TIMESTAMP  "YYYY-MM-DD HH:MM"
 // ================================================================
 string Leaderboard::currentTimestamp() const {
-    time_t now = time(nullptr);
-    tm t_buf;
-    localtime_s(&t_buf, &now);
-    tm* t = &t_buf;
+   time_t now = time(nullptr);
+tm t_buf;
+localtime_s(&t_buf, &now);
+tm* t = &t_buf;
     char   buf[32];
     // manual formatting — no strftime to avoid locale issues
     int yr = t->tm_year + 1900;
@@ -202,15 +202,7 @@ void Leaderboard::updateFlakes(float dt) {
 }
 
 void Leaderboard::drawBackground(sf::RenderWindow& w, float dt) {
-    // Deep night-blue gradient via two rectangles
-    sf::RectangleShape top(sf::Vector2f(800.f, 330.f));
-    top.setFillColor(sf::Color(5, 10, 35));
-    w.draw(top);
-
-    sf::RectangleShape bot(sf::Vector2f(800.f, 330.f));
-    bot.setPosition(0.f, 330.f);
-    bot.setFillColor(sf::Color(10, 20, 55));
-    w.draw(bot);
+   
 
     // Snowflakes
     updateFlakes(dt);

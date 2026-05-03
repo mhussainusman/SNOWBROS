@@ -1,8 +1,6 @@
 #include "Game.h"
 #include "AccountManager.h"
 
-
-
 // ================================================================
 //  SHARED DRAW HELPERS  (login / register screens)
 // ================================================================
@@ -146,7 +144,7 @@ Game::Game()
         );
     }
 
-
+    
     mCharacters[0] = { "Nick", sf::Color(100, 180, 255) };
     mCharacters[1] = { "Tom",  sf::Color(100, 255, 150) };
     mCharacters[2] = { "Max",  sf::Color(255, 165, 0) };
@@ -675,7 +673,7 @@ void Game::renderRegister() {
     tagTxt.setFillColor(tagColor);
     drawCenteredText(tagTxt, 213.f);        // original 113 + 100
 
-
+    
 
     // ── Input fields ─────────────────────────────────────────────
     // Original y=162 → now y=262
@@ -1615,9 +1613,9 @@ void Game::renderShop() {
 
     mWindow.draw(mShopBgSprite);
 
+    
 
-
-
+    
 
 
     // ── Title panel ─────────────────────────────────────────────

@@ -19,6 +19,8 @@ public:
     void setExpired();               // called when hits enemy or wall
     int getPlayerIndex() const;      // which player threw this
 
+    void applyPowerBoost();   // called when SNOWBALL POWER is active
+
 private:
     sf::RectangleShape mHitbox;   // collision box
     sf::RectangleShape mVisual;   // what gets drawn

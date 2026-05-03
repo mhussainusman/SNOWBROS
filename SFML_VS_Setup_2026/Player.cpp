@@ -79,6 +79,9 @@ void Player::update(float deltaTime,
         }
     }
 
+
+
+
     // track facing direction for snowball
     if (moveX > 0) mFacingRight = true;
     if (moveX < 0) mFacingRight = false;
@@ -134,6 +137,12 @@ bool Player::wantsToThrow() {
         return true;
     }
     return false;
+}
+
+
+//----------------lives addition-----------------
+void Player::addLife() {
+    mLives++;
 }
 
 void Player::loseLife() {
@@ -193,6 +202,16 @@ void Player::handleCollision(const Platform* platforms, int platformCount) {
         }
     }
 }
+
+void Player::resetLives() {
+    mLives = 3;
+    mRespawning = false;
+    mRespawnTimer = 0.f;
+    mHitbox.setPosition(mStartX, mStartY);
+    mVisual.setPosition(mStartX, mStartY);
+    mVelocityY = 0.f;
+}
+
 
 void Player::draw(sf::RenderWindow& window, bool showHitbox) {
 
