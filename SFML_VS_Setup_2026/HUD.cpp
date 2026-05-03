@@ -11,9 +11,7 @@ bool HUD::loadFont(const std::string& fontPath) {
 
     // setup all text objects after font is loaded
 
-    // player 1 label — top left
-    setupText(mP1Label, 12, sf::Color::Cyan, 10.f, 8.f);
-    mP1Label.setString("1P");
+  
 
     // player 1 score — below label
     setupText(mScore1Text, 14, sf::Color::White, 10.f, 25.f);
@@ -23,9 +21,7 @@ bool HUD::loadFont(const std::string& fontPath) {
     setupText(mLives1Text, 12, sf::Color::Yellow, 10.f, 45.f);
     mLives1Text.setString("LIFE: 0");
 
-    // player 2 label — top right
-    setupText(mP2Label, 12, sf::Color::Cyan, 710.f, 8.f);
-    mP2Label.setString("2P");
+ 
 
     // player 2 score — below label
     setupText(mScore2Text, 14, sf::Color::White, 710.f, 25.f);
@@ -34,16 +30,20 @@ bool HUD::loadFont(const std::string& fontPath) {
     // player 2 lives — below score
     setupText(mLives2Text, 12, sf::Color::Yellow, 710.f, 45.f);
     mLives2Text.setString("LIFE: 0");
+
     // gemscount 
     setupText(mGemText1, 12, sf::Color(0, 255, 200), 10.f, 65.f);
     mGemText1.setString("GEMS: 0");
 
-    setupText(mGemText2, 12, sf::Color(0, 255, 200), 710.f, 65.f);
+    setupText(mGemText2, 12, sf::Color(0, 255, 200), 690.f, 65.f);
     mGemText2.setString("GEMS: 0");
+
 
     // level indicator — top center
     setupText(mLevelText, 12, sf::Color::Green, 360.f, 27.f);
     mLevelText.setString("LEVEL 1");
+
+    
 
     return true;
 }
@@ -58,9 +58,7 @@ void HUD::setupText(sf::Text& text, int size,
 
 void HUD::update(int score1, int lives1,
     int score2, int lives2,
-    int level, int gems1, int gems2)
-
-{
+    int level, int gems1, int gems2) {
 
     // update score — pad with zeros to 6 digits
     // like original arcade game display
@@ -85,24 +83,27 @@ void HUD::update(int score1, int lives1,
         std::to_string(extraLives2));
 
     // update level
-    mLevelText.setString("LEVEL " + 
+    mLevelText.setString("LEVEL " +
         std::to_string(level));
-	// update gems
+
+    // update gems
     mGemText1.setString("GEMS: " + std::to_string(gems1));
     mGemText2.setString("GEMS: " + std::to_string(gems2));
-}
+};
+
 
 void HUD::draw(sf::RenderWindow& window) {
 
 
     // draw all text
-    window.draw(mP1Label);
+    
     window.draw(mScore1Text);
     window.draw(mLives1Text);
-    window.draw(mP2Label);
+   
     window.draw(mScore2Text);
     window.draw(mLives2Text);
     window.draw(mLevelText);
+   
     // gems
     window.draw(mGemText1);
     window.draw(mGemText2);
