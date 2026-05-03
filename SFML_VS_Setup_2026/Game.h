@@ -25,6 +25,8 @@ enum GameState {
     LEVEL_COMPLETE,
     PAUSED,
     GAME_OVER,
+    VICTORY,
+    LEADERBOARD_SCREEN
 };
 
 // character data — name and color for now
