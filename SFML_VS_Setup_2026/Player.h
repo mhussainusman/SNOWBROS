@@ -2,58 +2,82 @@
 #include <SFML/Graphics.hpp>
 #include "Platform.h"
 
-// Player: handles movement, gravity, jumping and collision
+
 class Player {
 public:
 
-    Player(int playerIndex);// 0: player 1, 1: player 2
+    Player(int playerIndex);
 
-    void update(float deltaTime, const Platform* platforms, int platformCount);
+    void addLife();
 
-    // showHitbox: when true draws green outline showing collision area
+    void update(float deltaTime,
+        const Platform* platforms, int platformCount);
+
     void draw(sf::RenderWindow& window, bool showHitbox);
 
-    sf::Vector2f getPosition() const;
-    sf::FloatRect getBounds() const;
-    bool isFacingRight() const; // used by snowball to know which direction to travel
+    sf::Vector2f  getPosition()    const;
+    sf::FloatRect getBounds()      const;
+    bool          isFacingRight()  const;
+    bool          wantsToThrow();
 
-    // called by Game when player presses throw button
-// returns true if a snowball should be spawned
-    bool wantsToThrow();
 
-    // lives system
-    int getLives() const;        // returns current lives
-    void loseLife();             // called when player touches enemy
-    bool isAlive() const;        // true when lives > 0
-    bool isRespawning() const;   // true during respawn invincibility period
+    int  getLives()       const;
+    void loseLife();
+    bool isAlive()        const;
+    bool isRespawning()   const;
     void resetLives();
+
+    // for power ups
+    void setSpeedBoost(bool active);
+    void setBalloonMode(bool active);
+
+    // called once from Character Select when a player confirms their pick
+    // 0 = blue, 1 = green, 2 = red
+    void setCharacterSprite(int characterIndex);
+
+    bool isInBalloonMode() const { return mBalloonMode; }
 
 private:
     void handleCollision(const Platform* platforms, int platformCount);
+    void handleBalloonCollision(); // screen edge bounce only
+    void syncSpritePosition();     // keeps sprite centered on mHitbox every frame
 
-    sf::RectangleShape mHitbox;   // collision box
-    sf::RectangleShape mVisual;   // placeholder visual, replaced with sprite later
+    sf::RectangleShape mHitbox;
+    sf::Texture mTexture;
+    sf::Sprite  mSprite;
+    bool        mTextureLoaded;
 
     float mSpeed;
     float mVelocityY;
-    bool mIsOnGround;
-    bool mFacingRight;  // true when player is facing right
+    float mVelocityX;   // NEW — needed for balloon free movement
+    bool  mIsOnGround;
+    bool  mFacingRight;
 
-    int mPlayerIndex;
-    bool mThrowKeyHeld; // prevents holding key expecting repetitive throw
+    int  mPlayerIndex;
+    bool mThrowKeyHeld;
 
     const float GRAVITY = 900.f;
     const float JUMP_FORCE = -480.f;
     const float MAX_FALL_SPEED = 600.f;
 
-    int mLives;                  // current lives remaining
-    float mRespawnTimer;         // counts down after death
-    float mRespawnTime;          // how long respawn invincibility lasts
-    bool mRespawning;            // true during invincibility period
+    // balloon movement speed — same as FlyingEnemy
+    const float BALLOON_SPEED = 180.f;
 
-    // starting position — used for respawning
+    int   mLives;
+    float mRespawnTimer;
+    float mRespawnTime;
+    bool  mRespawning;
+
+
     float mStartX;
     float mStartY;
+
+
+    bool mSpeedBoosted;
+    bool mBalloonMode;
+
+    float mBaseScaleX = 1.f;   // scale needed to fit sprite into mHitbox width
+    float mBaseScaleY = 1.f;   // scale needed to fit sprite into mHitbox height
 
 
 };

@@ -9,7 +9,7 @@ public:
     // movingRight = direction it travels
     // playerIndex = which player threw it (0 = player1, 1 = player2)
     Snowball(float x, float y, bool movingRight, int playerIndex);
-	Snowball() {}
+    Snowball() {}
 
     void update(float deltaTime);
     void draw(sf::RenderWindow& window, bool showHitbox);
@@ -19,14 +19,26 @@ public:
     void setExpired();               // called when hits enemy or wall
     int getPlayerIndex() const;      // which player threw this
 
+    void setMaxDistance(float dist);
+
+    void applyPowerBoost();   // called when SNOWBALL POWER is active
+
 private:
     sf::RectangleShape mHitbox;   // collision box
-    sf::RectangleShape mVisual;   // what gets drawn
+    sf::RectangleShape mVisual;   // fallback if sprite fails to load
+
+    // sprite — no persistent sf::Sprite member (array copy-assignment
+    // would leave a dangling texture pointer); built fresh in draw()
+    sf::Texture mTexture;
+    bool mTextureLoaded = false;
+    float mBaseScaleX = 1.f;   // scale needed to fit sprite into mHitbox size
+    float mBaseScaleY = 1.f;
 
     float mSpeed;              // how fast snowball travels
     bool mMovingRight;         // direction of travel
     float mDistanceTravelled;  // how far it has gone so far
     float mMaxDistance;        // disappears after this distance
     bool mExpired;             // true when should be removed
-    int mPlayerIndex;          // 0 = player1, 1 = player2
+    int mPlayerIndex;           // 0 = player1, 1 = player2
+    float mVelocityY;
 };

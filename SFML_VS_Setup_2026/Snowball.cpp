@@ -4,28 +4,49 @@ Snowball::Snowball(float x, float y, bool movingRight, int playerIndex)
     : mSpeed(400.f),
     mMovingRight(movingRight),
     mDistanceTravelled(0.f),
-    mMaxDistance(800.f),
+    mMaxDistance(300.f),
     mExpired(false),
-    mPlayerIndex(playerIndex) {
+    mPlayerIndex(playerIndex),
+    mVelocityY(0.f)
+{
 
     // hitbox — actual collision area
-    mHitbox.setSize(sf::Vector2f(20.f, 16.f));
+    mHitbox.setSize(sf::Vector2f(25.f, 21.f));
     mHitbox.setPosition(x, y);
     mHitbox.setFillColor(sf::Color::Transparent);
 
-    // visual — what player sees
-    // slightly bigger than hitbox so it looks good
-    mVisual.setSize(sf::Vector2f(20.f, 16.f));
+    // visual — fallback if sprite fails to load
+    mVisual.setSize(sf::Vector2f(25.f, 21.f));
     mVisual.setPosition(x, y);
     mVisual.setFillColor(sf::Color(150, 220, 255)); // light blue snowball
+
+    // sprite
+    mTextureLoaded = mTexture.loadFromFile("assets/Images/snowball.png");
+    if (mTextureLoaded) {
+        sf::Vector2u texSize = mTexture.getSize();
+        mBaseScaleX = mHitbox.getSize().x / (float)texSize.x;
+        mBaseScaleY = mHitbox.getSize().y / (float)texSize.y;
+    }
 }
 
 void Snowball::update(float deltaTime) {
 
-    // move left or right depending on direction
+    if (mExpired) return;
+    //move horizontal
     float moveX = mMovingRight ? mSpeed : -mSpeed;
     mHitbox.move(moveX * deltaTime, 0.f);
-    mVisual.move(moveX * deltaTime, 0.f);
+
+    mVisual.setPosition(mHitbox.getPosition());
+
+    // gravity curves snowball downward over time
+    if (mMaxDistance <= 300.f) {
+        mVelocityY += 500.f * deltaTime;
+        mHitbox.move(0.f, mVelocityY * deltaTime);
+    }
+
+
+
+
 
     // track total distance travelled
     mDistanceTravelled += mSpeed * deltaTime;
@@ -36,6 +57,9 @@ void Snowball::update(float deltaTime) {
 
     // expire if goes off screen
     sf::Vector2f pos = mHitbox.getPosition();
+
+    if (pos.y > 680.f)
+        mExpired = true;
     if (pos.x > 820.f || pos.x + mHitbox.getSize().x < -20.f)
         mExpired = true;
 }
@@ -43,8 +67,16 @@ void Snowball::update(float deltaTime) {
 void Snowball::draw(sf::RenderWindow& window, bool showHitbox) {
 
     if (!showHitbox) {
-        // normal mode — draw visual
-        window.draw(mVisual);
+        if (mTextureLoaded) {
+            sf::Sprite sprite;
+            sprite.setTexture(mTexture);
+            sprite.setScale(mBaseScaleX, mBaseScaleY);
+            sprite.setPosition(mHitbox.getPosition());
+            window.draw(sprite);
+        }
+        else {
+            window.draw(mVisual);
+        }
     }
     else {
         // debug mode — draw hitbox outline in yellow
@@ -72,4 +104,13 @@ void Snowball::setExpired() {
 
 int Snowball::getPlayerIndex() const {
     return mPlayerIndex;
+}
+
+void Snowball::setMaxDistance(float dist) {
+    mMaxDistance = dist;
+}
+
+void Snowball::applyPowerBoost() {
+    mSpeed = 600.f;           // faster travel
+    mMaxDistance = 800.f;     // guaranteed full screen width (already max, makes explicit)
 }

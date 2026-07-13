@@ -13,11 +13,43 @@ Enemy::Enemy(float x, float y, int hitsToEncase)
     mRollingRight(true),
     mMeltTimer(0.f),
     mMeltTime(0.f),
-    mKickedByPlayer(0) {
+    mKickedByPlayer(0),
+    mHasRebounded(false)
+{
 
     mHitbox.setPosition(x, y);
     mHitbox.setFillColor(sf::Color::Transparent);
-    mVisual.setPosition(x, y);
+}
+
+// shared by every enemy subclass — loads its texture and centers the sprite origin
+void Enemy::loadEnemyTexture(const std::string& path) {
+    mTextureLoaded = mTexture.loadFromFile(path);
+    if (mTextureLoaded) {
+        mSprite.setTexture(mTexture);
+        sf::FloatRect b = mSprite.getLocalBounds();
+        mSprite.setOrigin(b.width / 2.f, b.height / 2.f);
+    }
+}
+
+// keeps the sprite centered on the hitbox — call after every mHitbox move/setPosition
+void Enemy::syncSpritePosition() {
+    if (!mTextureLoaded) return;
+    sf::Vector2f pos = mHitbox.getPosition();
+    sf::Vector2f size = mHitbox.getSize();
+    mSprite.setPosition(pos.x + size.x / 2.f, pos.y + size.y / 2.f);
+}
+
+// scales the sprite so it renders at exactly mHitbox's width/height,
+// regardless of the source PNG's native resolution. faceRight=false
+// flips it horizontally around its (already centered) origin.
+void Enemy::applySpriteScale(bool faceRight) {
+    if (!mTextureLoaded) return;
+    sf::Vector2u texSize = mTexture.getSize();
+    if (texSize.x == 0 || texSize.y == 0) return;
+
+    float scaleX = mHitbox.getSize().x / (float)texSize.x;
+    float scaleY = mHitbox.getSize().y / (float)texSize.y;
+    mSprite.setScale(faceRight ? scaleX : -scaleX, scaleY);
 }
 
 void Enemy::takeDamage() {
@@ -34,11 +66,11 @@ void Enemy::takeDamage() {
     if (mSnowHits >= mHitsToEncase) {
         mEncased = true;
         mMeltTime = 6.f;
-        mVisual.setFillColor(sf::Color::White);
+        if (mTextureLoaded) mSprite.setColor(sf::Color::White);
     }
     else {
         mMeltTime = 3.f;
-        mVisual.setFillColor(sf::Color(200, 200, 255));
+        if (mTextureLoaded) mSprite.setColor(sf::Color(200, 200, 255));
     }
 }
 
@@ -55,6 +87,7 @@ void Enemy::startRolling(bool kickedRight, int playerIndex) {
     mRollingRight = kickedRight;
     mMeltTimer = 0.f;
     mKickedByPlayer = playerIndex;
+    mHasRebounded = false;
 }
 
 void Enemy::updateMelt(float deltaTime) {
@@ -65,7 +98,7 @@ void Enemy::updateMelt(float deltaTime) {
             mEncased = false;
             mMeltTimer = 0.f;
             mMeltTime = 0.f;
-            mVisual.setFillColor(mOriginalColor);
+            if (mTextureLoaded) mSprite.setColor(sf::Color::White);
         }
     }
 }
@@ -73,14 +106,14 @@ void Enemy::updateMelt(float deltaTime) {
 void Enemy::updateRolling(float deltaTime, const Platform* platforms, int platformCount) {
     float moveX = mRollingRight ? mRollSpeed : -mRollSpeed;
     mHitbox.move(moveX * deltaTime, 0.f);
-    mVisual.move(moveX * deltaTime, 0.f);
+    syncSpritePosition();
 
     mVelocityY += GRAVITY * deltaTime;
     if (mVelocityY > MAX_FALL_SPEED)
         mVelocityY = MAX_FALL_SPEED;
 
     mHitbox.move(0.f, mVelocityY * deltaTime);
-    mVisual.move(0.f, mVelocityY * deltaTime);
+    syncSpritePosition();
 
     for (int i = 0; i < platformCount; i++) {
         sf::FloatRect enemy = mHitbox.getGlobalBounds();
@@ -90,14 +123,35 @@ void Enemy::updateRolling(float deltaTime, const Platform* platforms, int platfo
         float overlapTop = (enemy.top + enemy.height) - plat.top;
         if (mVelocityY >= 0 && overlapTop > 0 && overlapTop < 50.f) {
             mHitbox.move(0.f, -overlapTop);
-            mVisual.move(0.f, -overlapTop);
+            syncSpritePosition();
             mVelocityY = 0.f;
         }
     }
 
     sf::Vector2f pos = mHitbox.getPosition();
-    if (pos.x > 850.f || pos.x + mHitbox.getSize().x < -50.f)
-        mDead = true;
+
+    float w = mHitbox.getSize().x;
+
+    // first bounce — check current direction's wall
+    if (!mHasRebounded) {
+        if (mRollingRight && pos.x + w >= 800.f) {
+            mRollingRight = false;
+            mHasRebounded = true;
+            mHitbox.setPosition(800.f - w, pos.y);
+            syncSpritePosition();
+        }
+        else if (!mRollingRight && pos.x <= 0.f) {
+            mRollingRight = true;
+            mHasRebounded = true;
+            mHitbox.setPosition(0.f, pos.y);
+            syncSpritePosition();
+        }
+    }
+    else {
+        // after rebound — die when reaching any screen edge
+        if (pos.x + w < -50.f || pos.x > 850.f)
+            mDead = true;
+    }
 }
 
 void Enemy::applyGravity(float deltaTime, const Platform* platforms, int platformCount) {
@@ -108,7 +162,7 @@ void Enemy::applyGravity(float deltaTime, const Platform* platforms, int platfor
         mVelocityY = MAX_FALL_SPEED;
 
     mHitbox.move(0.f, mVelocityY * deltaTime);
-    mVisual.move(0.f, mVelocityY * deltaTime);
+    syncSpritePosition();
 
     for (int i = 0; i < platformCount; i++) {
         sf::FloatRect enemy = mHitbox.getGlobalBounds();
@@ -118,7 +172,7 @@ void Enemy::applyGravity(float deltaTime, const Platform* platforms, int platfor
         float overlapTop = (enemy.top + enemy.height) - plat.top;
         if (mVelocityY >= 0 && overlapTop > 0 && overlapTop < 50.f) {
             mHitbox.move(0.f, -overlapTop);
-            mVisual.move(0.f, -overlapTop);
+            syncSpritePosition();
             mVelocityY = 0.f;
             mIsOnGround = true;
         }
@@ -132,36 +186,40 @@ bool Enemy::isPartiallyEncased() const { return mSnowHits > 0 && !mEncased; }
 
 int Enemy::getKickedByPlayer() const { return mKickedByPlayer; }
 
+void Enemy::instantEncase() {
+    mSnowHits = mHitsToEncase;
+    mEncased = true;
+    mMeltTime = 6.f;
+    mMeltTimer = 0.f;
+    if (mTextureLoaded) mSprite.setColor(sf::Color::White);
+}
+
+
 // --- BOTOM ---
 
-Botom::Botom(float x, float y,int variant)
-	: Enemy(x, y, 2 + variant),// hits to encase increases with variant
-	mMoveSpeed(130.f * (1.f + variant * 0.25f)),// speed increases with variant
+Botom::Botom(float x, float y, int variant)
+    : Enemy(x, y, 2 + variant),// hits to encase increases with variant
+    mMoveSpeed(130.f * (1.f + variant * 0.25f)),// speed increases with variant
     mMovingRight(rand() % 2),
     mJumpTimer(0.f),
     mJumpInterval(1.5f)
-    {
+{
 
-    mVisual.setSize(sf::Vector2f(38.f, 42.f));
-    mHitbox.setSize(sf::Vector2f(34.f, 38.f));
+    mHitbox.setSize(sf::Vector2f(49.f, 54.f));
     mHitbox.setPosition(x, y);
-    mVisual.setPosition(x, y);
 
-    // color based on variant
-    if (variant == 0) {
-        mOriginalColor = sf::Color(220, 80, 80);   // red
-    }
-    else if (variant == 1) {
-        mOriginalColor = sf::Color(80, 220, 80);   // green
-    }
-    else if (variant == 2) {
-        mOriginalColor = sf::Color(80, 80, 220);   // blue
-    }
-    else {
-        mOriginalColor = sf::Color(150, 80, 220);  // purple
-    }
+    // sprite based on variant — only 3 distinct Botom sprites exist,
+    // variant 3 reuses the blue sprite (no 4th color asset available)
+    if (variant == 0)
+        loadEnemyTexture("assets/Images/botom_orange.png");
+    else if (variant == 1)
+        loadEnemyTexture("assets/Images/botom_pink.png");
+    else if (variant == 2)
+        loadEnemyTexture("assets/Images/botom_blue.png");
+    else
+        loadEnemyTexture("assets/Images/botom_blue.png"); // variant 3 reuses blue
 
-    mVisual.setFillColor(mOriginalColor);
+    syncSpritePosition();
 
     // start moving in random direction
     mMovingRight = (rand() % 2 == 0);
@@ -179,13 +237,13 @@ void Botom::update(float deltaTime,
 
     if (mEncased) {
         applyGravity(deltaTime, platforms, platformCount);
-        mVisual.setPosition(mHitbox.getPosition());
+        syncSpritePosition();
         return;
     }
 
     if (mSnowHits > 0) {
         applyGravity(deltaTime, platforms, platformCount);
-        mVisual.setPosition(mHitbox.getPosition());
+        syncSpritePosition();
         return;
     }
 
@@ -224,14 +282,20 @@ void Botom::update(float deltaTime,
     // this is how it moves between platforms
     applyGravity(deltaTime, platforms, platformCount);
 
-    // sync visual
-    mVisual.setPosition(mHitbox.getPosition());
+    // sync sprite
+    syncSpritePosition();
 }
 
 // DRAW BOTTOM
 
 void Botom::draw(sf::RenderWindow& window, bool showHitbox) {
-    window.draw(mVisual);
+    if (mTextureLoaded) {
+        applySpriteScale(mMovingRight);
+        window.draw(mSprite);
+    }
+    else {
+        window.draw(mHitbox);
+    }
 
     if (showHitbox) {
         sf::RectangleShape debugBox;
@@ -261,9 +325,8 @@ FlyingEnemy::FlyingEnemy(float x, float y)
     mFlightSpeedY(0.f) {
 
     // override Botom's appearance
-    // slightly different color so player can distinguish
-    mOriginalColor = sf::Color(80, 180, 80); // green
-    mVisual.setFillColor(mOriginalColor);
+    loadEnemyTexture("assets/Images/foogafoog_blue.png");
+    syncSpritePosition();
 
     // needs 3 hits to encase — harder than Botom
     mHitsToEncase = 3;
@@ -282,13 +345,13 @@ void FlyingEnemy::update(float deltaTime,
 
     if (mEncased) {
         applyGravity(deltaTime, platforms, platformCount);
-        mVisual.setPosition(mHitbox.getPosition());
+        syncSpritePosition();
         return;
     }
 
     if (mSnowHits > 0) {
         applyGravity(deltaTime, platforms, platformCount);
-        mVisual.setPosition(mHitbox.getPosition());
+        syncSpritePosition();
         return;
     }
 
@@ -354,14 +417,20 @@ void FlyingEnemy::update(float deltaTime,
             mFlightInterval = 3.f + (rand() % 300) / 100.f;
         }
 
-        mVisual.setPosition(mHitbox.getPosition());
+        syncSpritePosition();
     }
 }
 
 void FlyingEnemy::draw(sf::RenderWindow& window, bool showHitbox) {
 
-    // draw visual
-    window.draw(mVisual);
+    // draw sprite, flipped to match last ground-walk direction
+    if (mTextureLoaded) {
+        applySpriteScale(mMovingRight);
+        window.draw(mSprite);
+    }
+    else {
+        window.draw(mHitbox);
+    }
 
     // draw hitbox in debug mode
     if (showHitbox) {
@@ -389,9 +458,9 @@ Tornado::Tornado(float x, float y)
     mKnifeTimer(0.f),
     mKnifeInterval(3.f) {
 
-    // override appearance — purple color
-    mOriginalColor = sf::Color(180, 80, 220);
-    mVisual.setFillColor(mOriginalColor);
+    // override appearance
+    loadEnemyTexture("assets/Images/tornado_red.png");
+    syncSpritePosition();
 
     // harder to encase — needs 4 hits
     mHitsToEncase = 4;
@@ -422,13 +491,13 @@ void Tornado::update(float deltaTime,
 
     if (mEncased) {
         applyGravity(deltaTime, platforms, platformCount);
-        mVisual.setPosition(mHitbox.getPosition());
+        syncSpritePosition();
         return;
     }
 
     if (mSnowHits > 0) {
         applyGravity(deltaTime, platforms, platformCount);
-        mVisual.setPosition(mHitbox.getPosition());
+        syncSpritePosition();
         return;
     }
 
@@ -478,8 +547,14 @@ void Tornado::update(float deltaTime,
 
 void Tornado::draw(sf::RenderWindow& window, bool showHitbox) {
 
-    // draw tornado visual
-    window.draw(mVisual);
+    // draw tornado sprite, flipped to match last ground-walk direction
+    if (mTextureLoaded) {
+        applySpriteScale(mMovingRight);
+        window.draw(mSprite);
+    }
+    else {
+        window.draw(mHitbox);
+    }
 
     // draw knife if active
     if (mKnifeActive)

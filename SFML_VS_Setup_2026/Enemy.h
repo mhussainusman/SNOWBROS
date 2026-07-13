@@ -1,5 +1,6 @@
 #pragma once
 #include <SFML/Graphics.hpp>
+#include <string>
 #include "Platform.h"
 
 // Enemy: abstract base class
@@ -28,7 +29,7 @@ public:
 
     void updateMelt(float deltaTime);
     // called when player stands next to encased enemy and presses kick button
-    void startRolling(bool kickedRight, int playerIndex=0);
+    void startRolling(bool kickedRight, int playerIndex = 0);
 
     // handles rolling movement every frame
     void updateRolling(float deltaTime, const Platform* platforms, int platformCount);
@@ -41,6 +42,7 @@ public:
     bool isPartiallyEncased() const; // true when hit once but not fully encased
 
     int getKickedByPlayer() const;
+    void instantEncase();
 
 protected:
 
@@ -49,9 +51,9 @@ protected:
     sf::RectangleShape mHitbox;
 
     // visual: what gets drawn on screen
-    // currently a colored rectangle — later replaced with sprite
-    // can be bigger than hitbox
-    sf::RectangleShape mVisual;
+    sf::Texture mTexture;
+    sf::Sprite  mSprite;
+    bool        mTextureLoaded;
 
     float mVelocityY;       // vertical speed: positive=falling, negative=rising
     bool mIsOnGround;       // true when standing on a platform
@@ -72,9 +74,13 @@ protected:
     const float MAX_FALL_SPEED = 600.f;
 
     // gravity and platform landing — shared by all enemies
-  
-  void applyGravity(float deltaTime, const Platform* platforms, int platformCount);
-  int mKickedByPlayer;
+
+    void applyGravity(float deltaTime, const Platform* platforms, int platformCount);
+    void loadEnemyTexture(const std::string& path); // loads texture + centers sprite origin
+    void syncSpritePosition();                      // keeps sprite centered on mHitbox every frame
+    void applySpriteScale(bool faceRight);           // scales sprite to exactly match mHitbox size, flips if faceRight is false
+    int mKickedByPlayer;
+    bool mHasRebounded = false;  // true after first wall bounce
 
 };
 
@@ -84,7 +90,7 @@ protected:
 // inherits from Enemy
 class Botom : public Enemy {
 public:
-    Botom(float x, float y, int variant=0);
+    Botom(float x, float y, int variant = 0);
 
     // overriding pure virtual functions from Enemy
     void update(float deltaTime, const Platform* platforms, int platformCount) override;
@@ -93,12 +99,14 @@ public:
     int getPoints() const override;
 
 
+protected:
+    bool mMovingRight;         // current walking direction — protected so subclasses can flip sprite by it
+
 private:
     float mMoveSpeed;          // how fast Botom walks
-    bool mMovingRight;         // current walking direction
     float mJumpTimer;          // counts time since last jump
     float mJumpInterval;       // how often enemy jumps
-  
+
 
     const float JUMP_FORCE = -520.f;
 

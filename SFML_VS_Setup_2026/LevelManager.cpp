@@ -1,5 +1,6 @@
 #include "LevelManager.h"
 #include "Enemy.h"
+#include "Boss.h"
 #include <fstream>
 #include <string>
 
@@ -124,6 +125,10 @@ Enemy* LevelManager::createEnemy(const std::string& type,float x, float y)
         return new FlyingEnemy(x, y);
     if (type == "Tornado")
         return new Tornado(x, y);
+    
+    if (type == "Mogera")       return new Mogera(x, y);      // level 5 boss
+    if (type == "Gamakichi")    return new Gamakichi(x, y);   // level 10 boss
+   
 
     return nullptr; // unknown type
 }
