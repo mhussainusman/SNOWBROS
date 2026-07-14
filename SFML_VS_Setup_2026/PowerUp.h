@@ -30,13 +30,21 @@ public:
 
     PowerUpType getType() const;
 
+    // Loads all 6 power-up textures from disk ONCE, up front.
+    // Call this exactly once, at startup (e.g. from Game's constructor,
+    // right alongside your other asset loads) — BEFORE any PowerUp is
+    // ever constructed during gameplay. This moves the disk read off
+    // the gameplay loop, so dropping 8 gems from a defeated boss no
+    // longer triggers a mid-frame texture load.
+    static void preloadAll();
+
 private:
     sf::RectangleShape mHitbox;
     sf::RectangleShape mVisual;   // fallback if sprite fails to load
 
     // sprite — no persistent sf::Sprite member (see note on copy safety);
     // built fresh in draw() from these each frame
-    sf::Texture mTexture;
+    sf::Texture* mTexturePtr = nullptr;
     bool mTextureLoaded = false;
     float mBaseScaleX = 1.f;   // scale needed to fit sprite into mHitbox size
     float mBaseScaleY = 1.f;
@@ -48,4 +56,10 @@ private:
     float mLifeTimer;       // how long before it disappears
 
     sf::Color mColor;       // color based on type — used by mVisual fallback
+
+    // shared texture cache — one copy per power-up type, for the whole
+    // program's lifetime. Filled once by preloadAll().
+    static sf::Texture sTextureCache[6];
+    static bool        sTextureLoaded[6];
+    static bool         sPreloaded; // true once preloadAll() has actually run
 };

@@ -40,8 +40,9 @@ protected:
 
 // ─────────────────────────────────────────────
 // MOGERA CHILD — small enemy spawned by Mogera
-// moves in one direction toward player
-// same behavior as Botom but faster and no snow mechanic
+// now behaves like a real enemy: walks, bounces off screen
+// walls, jumps periodically, can be snowballed/encased/kicked
+// same as any other ground enemy — no longer despawns off-screen
 // ─────────────────────────────────────────────
 class MogeraChild : public Enemy {
 public:
@@ -55,6 +56,10 @@ public:
 private:
     float mMoveSpeed;
     bool  mMovingRight;
+
+    float mJumpTimer;      // counts time since last jump
+    float mJumpInterval;   // how often it jumps — randomized each hop
+    const float JUMP_FORCE = -480.f;
 };
 
 // ─────────────────────────────────────────────

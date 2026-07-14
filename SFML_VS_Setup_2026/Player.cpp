@@ -17,7 +17,7 @@ Player::Player(int playerIndex)
     mBalloonMode(false)
 {
 
-    mHitbox.setSize(sf::Vector2f(50.f, 62.f));
+    mHitbox.setSize(sf::Vector2f(40.f, 59.f));
     mHitbox.setFillColor(sf::Color::Transparent);
 
     // player 1 respawns at midpoint of right half of ground
@@ -299,7 +299,7 @@ void Player::loseLife() {
 
 
 void Player::resetLives() {
-    mLives = 10;
+    mLives = 5;//changelives
     mRespawning = false;
     mRespawnTimer = 0.f;
     mHitbox.setPosition(mStartX, mStartY);
@@ -369,7 +369,7 @@ void Player::setCharacterSprite(int characterIndex) {
         mTextureLoaded = mTexture.loadFromFile("assets/Images/player_red.png");
 
     if (mTextureLoaded) {
-        mSprite.setTexture(mTexture);
+        mSprite.setTexture(mTexture, true);
         sf::FloatRect b = mSprite.getLocalBounds();
         mSprite.setOrigin(b.width / 2.f, b.height / 2.f);
         mBaseScaleX = mHitbox.getSize().x / b.width;

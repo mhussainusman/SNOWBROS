@@ -75,6 +75,9 @@ private:
     sf::Texture mBgTextures[4];
     sf::Sprite  mBgSprites[4];
     bool        mBgLoaded;
+    // Game over bg
+    sf::Texture mGameOverBgTexture;
+    sf::Sprite  mGameOverBgSprite;
 
     // Which player is currently logging in (1 or 2)
     int mLoginPlayerTurn;        // 1 = P1 logging in, 2 = P2 logging in

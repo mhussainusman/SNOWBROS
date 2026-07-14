@@ -75,12 +75,20 @@ void Boss::drawHealthBar(sf::RenderWindow& window) {
 
 // ─────────────────────────────────────────────
 // MOGERA CHILD
+// now walks/bounces/jumps like Botom instead of dying
+// off-screen — makes the Mogera fight harder since these
+// stick around until actually snowballed and kicked out
 // ─────────────────────────────────────────────
 
 MogeraChild::MogeraChild(float x, float y, bool movingRight)
-    : Enemy(x, y, 1),   // 1 hit to encase — easy to kill
-    mMoveSpeed(120.f),
-    mMovingRight(movingRight)
+    : Enemy(x, y, 2),   // 2 hits to encase — 1st hit = half-frozen phase
+    // (short timer, no kick), 2nd hit = fully encased
+    // (longer timer, kickable). Matches every other
+    // enemy's two-phase freeze system.
+    mMoveSpeed(150.f),   // a bit faster than Botom's base speed
+    mMovingRight(movingRight),
+    mJumpTimer(0.f),
+    mJumpInterval(1.5f)
 {
     mHitbox.setSize(sf::Vector2f(39.f, 39.f));
     mHitbox.setPosition(x, y);
@@ -106,28 +114,55 @@ void MogeraChild::update(float deltaTime,
         return;
     }
 
-    // move in one direction — simple straight line walk
+    if (mSnowHits > 0) {
+        applyGravity(deltaTime, platforms, platformCount);
+        syncSpritePosition();
+        return;
+    }
+
+    // --- SIMPLE WALK — same pattern as Botom ---
     float moveX = mMovingRight ? mMoveSpeed : -mMoveSpeed;
     mHitbox.move(moveX * deltaTime, 0.f);
 
-    // die when off screen — don't bounce
+    // --- WALL BOUNCE — stays on screen instead of despawning at the edge ---
     sf::Vector2f pos = mHitbox.getPosition();
-    if (pos.x > 850.f || pos.x + mHitbox.getSize().x < -50.f)
-        mDead = true;
+    if (pos.x < 0.f) {
+        mHitbox.setPosition(0.f, pos.y);
+        mMovingRight = true;
+    }
+    if (pos.x + mHitbox.getSize().x > 800.f) {
+        mHitbox.setPosition(800.f - mHitbox.getSize().x, pos.y);
+        mMovingRight = false;
+    }
 
+    // --- JUMP — hops around periodically, same pattern as Botom ---
+    if (mIsOnGround) {
+        mJumpTimer += deltaTime;
+        if (mJumpTimer >= mJumpInterval) {
+            mJumpTimer = 0.f;
+            mJumpInterval = 1.f + (rand() % 100) / 100.f; // 1-2 seconds — hops a bit more often than Botom
+            mVelocityY = JUMP_FORCE;
+            mIsOnGround = false;
+        }
+    }
+
+    // --- GRAVITY ---
     applyGravity(deltaTime, platforms, platformCount);
+
     syncSpritePosition();
 }
 
 void MogeraChild::draw(sf::RenderWindow& window, bool showHitbox) {
     if (mDead) return;
 
-    if (!mTextureLoaded) {
-        window.draw(mHitbox);
-    }
-    else {
-        applySpriteScale(mMovingRight);
-        window.draw(mSprite);
+    if (!drawIfEncased(window)) {
+        if (!mTextureLoaded) {
+            window.draw(mHitbox);
+        }
+        else {
+            applySpriteScale(mMovingRight);
+            window.draw(mSprite);
+        }
     }
 
     if (showHitbox) {
@@ -155,7 +190,7 @@ Mogera::Mogera(float x, float y)
     mPendingChild(nullptr)
 {
     // Mogera is large — takes up significant screen space
-    mHitbox.setSize(sf::Vector2f(130.f, 110.f));
+    mHitbox.setSize(sf::Vector2f(115.f, 110.f));
     mHitbox.setPosition(x, y);
     loadEnemyTexture("assets/Images/mogera.png");
     syncSpritePosition();

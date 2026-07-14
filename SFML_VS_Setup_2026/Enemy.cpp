@@ -1,4 +1,5 @@
 #include "Enemy.h"
+#include <cmath>
 
 // Enemy base constructor
 Enemy::Enemy(float x, float y, int hitsToEncase)
@@ -25,7 +26,7 @@ Enemy::Enemy(float x, float y, int hitsToEncase)
 void Enemy::loadEnemyTexture(const std::string& path) {
     mTextureLoaded = mTexture.loadFromFile(path);
     if (mTextureLoaded) {
-        mSprite.setTexture(mTexture);
+        mSprite.setTexture(mTexture, true); // true = always reset texture rect to full new image
         sf::FloatRect b = mSprite.getLocalBounds();
         mSprite.setOrigin(b.width / 2.f, b.height / 2.f);
     }
@@ -50,6 +51,39 @@ void Enemy::applySpriteScale(bool faceRight) {
     float scaleX = mHitbox.getSize().x / (float)texSize.x;
     float scaleY = mHitbox.getSize().y / (float)texSize.y;
     mSprite.setScale(faceRight ? scaleX : -scaleX, scaleY);
+}
+
+// shared by every enemy subclass — shows a half-snowball sprite while
+// partially hit, and a full-snowball sprite once fully encased. Textures
+// are loaded once and cached (static) since every enemy of every type
+// reuses the same two images.
+bool Enemy::drawIfEncased(sf::RenderWindow& window) {
+    if (!mEncased && mSnowHits <= 0) return false; // not frozen at all
+
+    static sf::Texture halfTex, fullTex;
+    static bool halfLoaded = halfTex.loadFromFile("assets/Images/half_snowball.png");
+    static bool fullLoaded = fullTex.loadFromFile("assets/Images/snowball.png");
+
+    sf::Texture* tex = mEncased ? &fullTex : &halfTex;
+    bool loaded = mEncased ? fullLoaded : halfLoaded;
+    if (!loaded) return false; // PNG missing — let caller fall back to normal sprite
+
+    sf::Sprite s;
+    s.setTexture(*tex, true);
+    sf::FloatRect b = s.getLocalBounds();
+    s.setOrigin(b.width / 2.f, b.height / 2.f);
+
+    sf::Vector2u texSize = tex->getSize();
+    float scaleX = mHitbox.getSize().x / (float)texSize.x;
+    float scaleY = mHitbox.getSize().y / (float)texSize.y;
+    s.setScale(scaleX, scaleY);
+
+    sf::Vector2f pos = mHitbox.getPosition();
+    sf::Vector2f size = mHitbox.getSize();
+    s.setPosition(pos.x + size.x / 2.f, pos.y + size.y / 2.f);
+
+    window.draw(s);
+    return true;
 }
 
 void Enemy::takeDamage() {
@@ -205,7 +239,7 @@ Botom::Botom(float x, float y, int variant)
     mJumpInterval(1.5f)
 {
 
-    mHitbox.setSize(sf::Vector2f(49.f, 54.f));
+    mHitbox.setSize(sf::Vector2f(44.f, 48.f));
     mHitbox.setPosition(x, y);
 
     // sprite based on variant — only 3 distinct Botom sprites exist,
@@ -289,12 +323,14 @@ void Botom::update(float deltaTime,
 // DRAW BOTTOM
 
 void Botom::draw(sf::RenderWindow& window, bool showHitbox) {
-    if (mTextureLoaded) {
-        applySpriteScale(mMovingRight);
-        window.draw(mSprite);
-    }
-    else {
-        window.draw(mHitbox);
+    if (!drawIfEncased(window)) {
+        if (mTextureLoaded) {
+            applySpriteScale(mMovingRight);
+            window.draw(mSprite);
+        }
+        else {
+            window.draw(mHitbox);
+        }
     }
 
     if (showHitbox) {
@@ -424,12 +460,14 @@ void FlyingEnemy::update(float deltaTime,
 void FlyingEnemy::draw(sf::RenderWindow& window, bool showHitbox) {
 
     // draw sprite, flipped to match last ground-walk direction
-    if (mTextureLoaded) {
-        applySpriteScale(mMovingRight);
-        window.draw(mSprite);
-    }
-    else {
-        window.draw(mHitbox);
+    if (!drawIfEncased(window)) {
+        if (mTextureLoaded) {
+            applySpriteScale(mMovingRight);
+            window.draw(mSprite);
+        }
+        else {
+            window.draw(mHitbox);
+        }
     }
 
     // draw hitbox in debug mode
@@ -470,9 +508,24 @@ Tornado::Tornado(float x, float y)
     mFlightDuration = 4.f;   // stays in flight longer
     // flight speed set when taking flight
 
-    // knife visual — small yellow rectangle
-    mKnifeVisual.setSize(sf::Vector2f(15.f, 6.f));
-    mKnifeVisual.setFillColor(sf::Color::Yellow);
+    // knife visual — sprite, loaded once and shared across all Tornado
+    // instances (static, same caching pattern as Gamakichi's rocket)
+    static sf::Texture knifeTexture;
+    static bool knifeTextureLoaded =
+        knifeTexture.loadFromFile("assets/Images/knife.png");
+
+    if (knifeTextureLoaded) {
+        mKnifeVisual.setTexture(knifeTexture);
+        sf::FloatRect b = mKnifeVisual.getLocalBounds();
+        mKnifeVisual.setOrigin(b.width / 2.f, b.height / 2.f);
+
+        // fit knife to a small, consistent size regardless of source PNG
+        float targetWidth = 22.f;
+        if (b.width > 0.f) {
+            float scale = targetWidth / b.width;
+            mKnifeVisual.setScale(scale, scale);
+        }
+    }
 }
 
 void Tornado::setNearestPlayerPos(sf::Vector2f pos) {
@@ -528,6 +581,10 @@ void Tornado::update(float deltaTime,
             myPos.x + mHitbox.getSize().x / 2.f,
             myPos.y + mHitbox.getSize().y / 2.f);
 
+        // point the knife sprite toward its throw direction
+        float angleDeg = atan2(mKnifeDirection.y, mKnifeDirection.x) * 180.f / 3.14159265f;
+        mKnifeVisual.setRotation(angleDeg);
+
         mKnifeActive = true;
     }
 
@@ -548,12 +605,14 @@ void Tornado::update(float deltaTime,
 void Tornado::draw(sf::RenderWindow& window, bool showHitbox) {
 
     // draw tornado sprite, flipped to match last ground-walk direction
-    if (mTextureLoaded) {
-        applySpriteScale(mMovingRight);
-        window.draw(mSprite);
-    }
-    else {
-        window.draw(mHitbox);
+    if (!drawIfEncased(window)) {
+        if (mTextureLoaded) {
+            applySpriteScale(mMovingRight);
+            window.draw(mSprite);
+        }
+        else {
+            window.draw(mHitbox);
+        }
     }
 
     // draw knife if active
@@ -572,9 +631,10 @@ void Tornado::draw(sf::RenderWindow& window, bool showHitbox) {
 
         // show knife hitbox too
         if (mKnifeActive) {
+            sf::FloatRect kb = mKnifeVisual.getGlobalBounds();
             sf::RectangleShape knifeDebug;
-            knifeDebug.setPosition(mKnifeVisual.getPosition());
-            knifeDebug.setSize(mKnifeVisual.getSize());
+            knifeDebug.setPosition(kb.left, kb.top);
+            knifeDebug.setSize(sf::Vector2f(kb.width, kb.height));
             knifeDebug.setFillColor(sf::Color::Transparent);
             knifeDebug.setOutlineColor(sf::Color::Yellow);
             knifeDebug.setOutlineThickness(2.f);

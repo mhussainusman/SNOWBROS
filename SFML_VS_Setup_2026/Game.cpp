@@ -2,7 +2,7 @@
 #include "AccountManager.h"
 
 
-//ABDULLAH--------------------------
+
 
 //  SHARED DRAW HELPERS  (login / register screens)
 
@@ -27,12 +27,12 @@ static void drawInputBox(sf::RenderWindow& w, sf::Font& font,
     sf::Text lbl;
     lbl.setFont(font);
     lbl.setString(label);
-    lbl.setCharacterSize(13);
+    lbl.setCharacterSize(24);
     lbl.setFillColor(active ? sf::Color(0, 80, 80) : sf::Color(60, 60, 80));
-    lbl.setPosition(x, y);
+    lbl.setPosition(x, y-14.f);
     w.draw(lbl);
 
-    sf::RectangleShape box(sf::Vector2f(boxW, 34.f));
+    sf::RectangleShape box(sf::Vector2f(boxW, 38.f));
     box.setPosition(x, y + 20.f);
     box.setFillColor(active ? sf::Color(40, 45, 90) : sf::Color(25, 28, 60));
     box.setOutlineColor(active ? sf::Color::Cyan : sf::Color(80, 80, 120));
@@ -47,7 +47,7 @@ static void drawInputBox(sf::RenderWindow& w, sf::Font& font,
     sf::Text txt;
     txt.setFont(font);
     txt.setString(display);
-    txt.setCharacterSize(13);
+    txt.setCharacterSize(24);
     txt.setFillColor(sf::Color::White);
     txt.setPosition(x + 8.f, y + 27.f);
     w.draw(txt);
@@ -70,7 +70,7 @@ Game::Game()
     mPlatformCount(0), mPlatformCapacity(20),
     mEnemyCount(0), mEnemyCapacity(20),
     mSnowballCount(0), mSnowballCapacity(20),
-    mState(MAIN_MENU), // CHANGE THIS TO GO ONTO WHATEVER SCREEN U WANT
+    mState(CHARACTER_SELECT), // Changescreen
     mLoginPlayerTurn(1),
     mTypingConfirm(false),
     mTypingUsername(true),
@@ -112,6 +112,8 @@ Game::Game()
     mFont.loadFromFile("assets/Fonts/ps2.ttf");
     mHUD.loadFont("assets/Fonts/ps2.ttf");
     mLeaderboard.setFont(mFont);
+
+    PowerUp::preloadAll();//load powerups
 
     // first image
 
@@ -174,6 +176,15 @@ Game::Game()
         );
     }
 
+    if (mGameOverBgTexture.loadFromFile("assets/Images/gameover.png")) {
+        mGameOverBgTexture.setSmooth(true);
+        mGameOverBgSprite.setTexture(mGameOverBgTexture);
+        mGameOverBgSprite.setScale(
+            800.f / mGameOverBgTexture.getSize().x,
+            660.f / mGameOverBgTexture.getSize().y
+        );
+    }
+
 
     mCharacters[0] = { "Nick", sf::Color(100, 180, 255) };
     mCharacters[1] = { "Tom",  sf::Color(100, 255, 150) };
@@ -181,15 +192,15 @@ Game::Game()
 
     // load character select images — sprite textures (Tier 1 integration)
 
-    if (mCharTextures[0].loadFromFile("assets/Images/player_blue.png")) {
+    if (mCharTextures[0].loadFromFile("assets/Images/blue.png")) {
         mCharTextures[0].setSmooth(true);
         mCharSprites[0].setTexture(mCharTextures[0]);
     }
-    if (mCharTextures[1].loadFromFile("assets/Images/player_green.png")) {
+    if (mCharTextures[1].loadFromFile("assets/Images/green.png")) {
         mCharTextures[1].setSmooth(true);
         mCharSprites[1].setTexture(mCharTextures[1]);
     }
-    if (mCharTextures[2].loadFromFile("assets/Images/player_red.png")) {
+    if (mCharTextures[2].loadFromFile("assets/Images/red.png")) {
         mCharTextures[2].setSmooth(true);
         mCharSprites[2].setTexture(mCharTextures[2]);
     }
@@ -329,7 +340,7 @@ void Game::processEvents() {
 
                 if (event.key.code == sf::Keyboard::Return) {
                     if (mMenuSelection == 0) {
-                        mCurrentLevel = 5; // changeyourlevel
+                        mCurrentLevel = 5; // changelevel
                         mScore1 = 0;
                         mScore2 = 0;
                         mScoreSaved = false;
@@ -724,8 +735,7 @@ void Game::renderSplash() {
 }
 
 
-//  LOGIN SCREEN  (P1 then P2, one at a time)
-//  NOTE: All Y positions shifted +100 from original
+//  LOGIN SCREEN  
 
 
 void Game::renderLogin() {
@@ -738,8 +748,8 @@ void Game::renderLogin() {
         ? sf::Color(100, 200, 255)
         : sf::Color(100, 255, 160);
 
-    sf::RectangleShape tagBar(sf::Vector2f(300.f, 30.f));
-    tagBar.setPosition(250.f, 228.f);
+    sf::RectangleShape tagBar(sf::Vector2f(300.f, 45.f));
+    tagBar.setPosition(250.f, 120.f);
     tagBar.setFillColor(mLoginPlayerTurn == 1
         ? sf::Color(0, 60, 120, 180)
         : sf::Color(0, 100, 60, 180));
@@ -750,87 +760,70 @@ void Game::renderLogin() {
     sf::Text tagText;
     tagText.setFont(mFont);
     tagText.setString(tag);
-    tagText.setCharacterSize(14);
+    tagText.setCharacterSize(28);
     tagText.setFillColor(tagColor);
-    drawCenteredText(tagText, 233.f);   // original 133 + 100
+    drawCenteredText(tagText, 126.f);  
 
-    // ── Divider ──────────────────────────────────────────────────
-    // Original y=172 → now y=272
-    sf::RectangleShape div(sf::Vector2f(440.f, 1.f));
-    div.setPosition(180.f, 272.f);
-    div.setFillColor(sf::Color(60, 100, 220, 150));
-    mWindow.draw(div);
+    
 
     // ── Input fields ─────────────────────────────────────────────
-    // Original y=185 → now y=285  |  original y=265 → now y=365
+  
     bool typingUser = (mLoginState == LoginState::TYPING_USER);
     bool typingPass = (mLoginState == LoginState::TYPING_PASS);
 
     drawInputBox(mWindow, mFont, "USERNAME",
-        mUsernameInput, 180.f, 285.f, 440.f, typingUser);
+        mUsernameInput, 180.f, 230.f, 440.f, typingUser);
     drawInputBox(mWindow, mFont, "PASSWORD",
-        mPasswordInput, 180.f, 365.f, 440.f, typingPass, true);
+        mPasswordInput, 180.f, 335.f, 440.f, typingPass, true);
 
     // ── Hint text ────────────────────────────────────────────────
-    // Original y=360 → now y=460
-    sf::Text hint;
+      sf::Text hint;
     hint.setFont(mFont);
     hint.setString("ENTER: confirm / login      TAB: switch field");
-    hint.setCharacterSize(9);
-    hint.setFillColor(sf::Color(120, 130, 160));
-    drawCenteredText(hint, 460.f);
+    hint.setCharacterSize(20);
+    hint.setFillColor(sf::Color(255, 255, 255));
+    drawCenteredText(hint, 440.f);
 
     // ── Create account button ─────────────────────────────────────
-    // Original y=385 → now y=485
-    drawPanel(mWindow, 180.f, 485.f, 440.f, 50.f,
+
+    drawPanel(mWindow, 180.f, 515.f, 440.f, 50.f,
         sf::Color(20, 50, 30), sf::Color(60, 180, 80));
 
     sf::Text newAccLabel;
     newAccLabel.setFont(mFont);
     newAccLabel.setString("NO ACCOUNT?");
-    newAccLabel.setCharacterSize(10);
+    newAccLabel.setCharacterSize(18);
     newAccLabel.setFillColor(sf::Color(160, 220, 160));
-    drawCenteredText(newAccLabel, 492.f);   // original 392 + 100
+    drawCenteredText(newAccLabel, 488.f);  
 
     sf::Text newAccBtn;
     newAccBtn.setFont(mFont);
     newAccBtn.setString("[ C ]  CREATE NEW ACCOUNT");
-    newAccBtn.setCharacterSize(12);
+    newAccBtn.setCharacterSize(20);
     newAccBtn.setFillColor(sf::Color(100, 255, 120));
-    drawCenteredText(newAccBtn, 510.f);     // original 410 + 100
+    drawCenteredText(newAccBtn, 525.f);     
 
-    // ── P1 logged-in reminder (shown during P2 turn) ──────────────
-    // Original y=448 → now y=548
-    if (mLoginPlayerTurn == 2 && !mP1Username.empty()) {
-        sf::Text p1done;
-        p1done.setFont(mFont);
-        p1done.setString("P1: " + mP1Username + "  logged in  |  P2: your turn");
-        p1done.setCharacterSize(10);
-        p1done.setFillColor(sf::Color(80, 200, 120));
-        drawCenteredText(p1done, 548.f);
-    }
 
     // ── Message box ───────────────────────────────────────────────
-    // Original y=476 → now y=576  (capped to fit inside 660px window)
+   
     if (!mLoginMessage.empty()) {
         sf::Color boxFill = mLoginSuccess ? sf::Color(0, 60, 20) : sf::Color(70, 0, 0);
         sf::Color boxLine = mLoginSuccess ? sf::Color(60, 200, 80) : sf::Color(220, 50, 50);
         sf::Color txtColor = mLoginSuccess ? sf::Color(100, 255, 130) : sf::Color(255, 80, 80);
 
-        drawPanel(mWindow, 100.f, 576.f, 600.f, 40.f, boxFill, boxLine);
+        drawPanel(mWindow, 100.f, 600.f, 600.f, 40.f, boxFill, boxLine);
 
         sf::Text msg;
         msg.setFont(mFont);
         msg.setString(mLoginMessage);
-        msg.setCharacterSize(12);
+        msg.setCharacterSize(20);
         msg.setFillColor(txtColor);
-        drawCenteredText(msg, 586.f);       // original 486 + 100
+        drawCenteredText(msg, 608.f);      
     }
 }
 
 
-//  REGISTER SCREEN  (new account creation)
-//  NOTE: All Y positions shifted +100 from original
+//  REGISTER SCREEN/CreateAcc
 
 
 void Game::renderRegister() {
@@ -839,24 +832,24 @@ void Game::renderRegister() {
     mWindow.draw(mLoginBgSprite);
 
     // ── Title ────────────────────────────────────────────────────
-    // Original y=65 → now y=165
+   
     sf::Text title;
     title.setFont(mFont);
-    title.setString("* CREATE ACCOUNT *");
-    title.setCharacterSize(24);
-    title.setFillColor(sf::Color(15, 15, 15));
-    drawCenteredText(title, 165.f);
+    title.setString("CREATE ACCOUNT");
+    title.setCharacterSize(56);
+    title.setFillColor(sf::Color::White);
+    drawCenteredText(title, 90.f);
 
     // ── Player tag bar ───────────────────────────────────────────
-    // Original y=108 → now y=208
+
     std::string tag = (mLoginPlayerTurn == 1)
         ? "SETTING UP PLAYER 1" : "SETTING UP PLAYER 2";
     sf::Color tagColor = (mLoginPlayerTurn == 1)
         ? sf::Color(100, 200, 255) : sf::Color(100, 255, 160);
 
-    sf::RectangleShape tagBar(sf::Vector2f(340.f, 28.f));
-    tagBar.setPosition(230.f, 208.f);
-    tagBar.setFillColor(sf::Color(0, 60, 20, 180));
+    sf::RectangleShape tagBar(sf::Vector2f(340.f, 40.f));
+    tagBar.setPosition(230.f, 182.f);
+    tagBar.setFillColor(sf::Color(75, 0, 130));
     tagBar.setOutlineColor(tagColor);
     tagBar.setOutlineThickness(1.5f);
     mWindow.draw(tagBar);
@@ -864,16 +857,14 @@ void Game::renderRegister() {
     sf::Text tagTxt;
     tagTxt.setFont(mFont);
     tagTxt.setString(tag);
-    tagTxt.setCharacterSize(12);
+    tagTxt.setCharacterSize(24);
     tagTxt.setFillColor(tagColor);
-    drawCenteredText(tagTxt, 213.f);        // original 113 + 100
+    drawCenteredText(tagTxt, 187.f);        
 
 
 
     // ── Input fields ─────────────────────────────────────────────
-    // Original y=162 → now y=262
-    // Original y=245 → now y=345
-    // Original y=328 → now y=428
+
     bool onUser = (mLoginState == LoginState::TYPING_USER && !mTypingConfirm);
     bool onPass = (mLoginState == LoginState::TYPING_PASS && !mTypingConfirm);
     bool onConfirm = mTypingConfirm;
@@ -886,40 +877,28 @@ void Game::renderRegister() {
         mConfirmPassInput, 180.f, 428.f, 440.f, onConfirm, true);
 
     // ── Hint text ────────────────────────────────────────────────
-    // Original y=418 → now y=518
+ 
     sf::Text hint;
     hint.setFont(mFont);
-    hint.setString("ENTER: next field      BACKSPACE: delete");
-    hint.setCharacterSize(9);
-    hint.setFillColor(sf::Color(120, 130, 160));
+    hint.setString("ENTER: Next     BACKSPACE: Delete");
+    hint.setCharacterSize(20);
+    hint.setFillColor(sf::Color::White);
     drawCenteredText(hint, 518.f);
 
     // ── Back button ───────────────────────────────────────────────
-    // Original y=438 → now y=538
-    drawPanel(mWindow, 180.f, 538.f, 200.f, 36.f,
-        sf::Color(50, 20, 20), sf::Color(180, 60, 60));
+    
     sf::Text backBtn;
     backBtn.setFont(mFont);
-    backBtn.setString("[ ESC ]  BACK");
-    backBtn.setCharacterSize(11);
-    backBtn.setFillColor(sf::Color(255, 120, 120));
-    backBtn.setPosition(200.f, 547.f);      // original 447 + 100
+    backBtn.setString("[ESCAPE]: Back");
+    backBtn.setCharacterSize(20);
+    backBtn.setFillColor(sf::Color(255, 255, 255));
+    backBtn.setPosition(10.f, 10.f);      
     mWindow.draw(backBtn);
 
-    // ── Create button ─────────────────────────────────────────────
-    // Original y=438 → now y=538
-    drawPanel(mWindow, 420.f, 538.f, 210.f, 36.f,
-        sf::Color(20, 60, 20), sf::Color(60, 200, 80));
-    sf::Text createBtn;
-    createBtn.setFont(mFont);
-    createBtn.setString("[ ENTER ]  CREATE");
-    createBtn.setCharacterSize(11);
-    createBtn.setFillColor(sf::Color(100, 255, 120));
-    createBtn.setPosition(432.f, 547.f);    // original 447 + 100
-    mWindow.draw(createBtn);
+
 
     // ── Message box ───────────────────────────────────────────────
-    // Original y=488 → now y=588  (fits just inside 660px window)
+   
     if (!mLoginMessage.empty()) {
         sf::Color boxFill = mLoginSuccess ? sf::Color(0, 60, 20) : sf::Color(70, 0, 0);
         sf::Color boxLine = mLoginSuccess ? sf::Color(60, 200, 80) : sf::Color(220, 50, 50);
@@ -930,9 +909,9 @@ void Game::renderRegister() {
         sf::Text msg;
         msg.setFont(mFont);
         msg.setString(mLoginMessage);
-        msg.setCharacterSize(12);
+        msg.setCharacterSize(20);
         msg.setFillColor(txtColor);
-        drawCenteredText(msg, 599.f);       // original 499 + 100
+        drawCenteredText(msg, 599.f);       
     }
 }
 
@@ -1214,7 +1193,7 @@ void Game::renderCharSelect() {
     for (int i = 0; i < 3; i++) {
         float x = 150.f + i * 200.f;
         float boxW = 120.f;
-        float boxH = 140.f;
+        float boxH = 160.f;
         float boxY = 330.f;
 
         // draw outline box behind the image
@@ -1288,7 +1267,7 @@ void Game::renderMainMenu() {
     title.setFont(mFont);
     title.setString("SNOW BROS");
     title.setCharacterSize(48);
-    title.setFillColor(sf::Color::Cyan);
+    title.setFillColor(sf::Color::Red);
     drawCenteredText(title, 80.f);
 
 
@@ -1476,40 +1455,32 @@ void Game::renderPaused() {
 
 
 void Game::renderGameOver() {
-    sf::Text title;
-    title.setFont(mFont);
-    title.setString("GAME OVER");
-    title.setCharacterSize(48);
-    title.setFillColor(sf::Color::Red);
-    drawCenteredText(title, 150.f);
+    mWindow.draw(mGameOverBgSprite);
+
+ 
 
     sf::Text s1;
     s1.setFont(mFont);
     s1.setString(mP1Username + " SCORE: " + std::to_string(mScore1));
-    s1.setCharacterSize(18);
+    s1.setCharacterSize(36);
     s1.setFillColor(sf::Color::Cyan);
-    drawCenteredText(s1, 280.f);
+    drawCenteredText(s1, 220.f);
 
     sf::Text s2;
     s2.setFont(mFont);
     s2.setString(mP2Username + " SCORE: " + std::to_string(mScore2));
-    s2.setCharacterSize(18);
-    s2.setFillColor(sf::Color(100, 255, 150));
+    s2.setCharacterSize(36);
+    s2.setFillColor(sf::Color(144,238,144));
     drawCenteredText(s2, 320.f);
 
     sf::Text level;
     level.setFont(mFont);
     level.setString("LEVEL REACHED: " + std::to_string(mCurrentLevel));
-    level.setCharacterSize(18);
+    level.setCharacterSize(34);
     level.setFillColor(sf::Color::White);
-    drawCenteredText(level, 380.f);
+    drawCenteredText(level, 430.f);
 
-    sf::Text hint;
-    hint.setFont(mFont);
-    hint.setString("PRESS ENTER TO RETURN TO MENU");
-    hint.setCharacterSize(14);
-    hint.setFillColor(sf::Color(150, 150, 150));
-    drawCenteredText(hint, 480.f);
+    
 }
 
 
@@ -1611,15 +1582,12 @@ void Game::checkSnowballEnemyCollision() {
             if (mSnowballs[i].getBounds().intersects(mEnemies[j]->getBounds()))
             {
                 Boss* boss = dynamic_cast<Boss*>(mEnemies[j]);
-                MogeraChild* child = dynamic_cast<MogeraChild*>(mEnemies[j]);
+                
 
                 if (boss != nullptr) {
                     boss->takeBossHit();
                 }
-                else if (child != nullptr) {
-                    // child dies instantly on one hit — no encase
-                    child->setDead();
-                }
+               
                 else {
                     bool p1Power = mSnowballs[i].getPlayerIndex() == 0 && mSnowballPower1;
                     bool p2Power = mSnowballs[i].getPlayerIndex() == 1 && mSnowballPower2;

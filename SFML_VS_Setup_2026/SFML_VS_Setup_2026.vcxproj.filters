@@ -86,9 +86,6 @@
     <ClInclude Include="Shop.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="FileManager.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="AccountManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>

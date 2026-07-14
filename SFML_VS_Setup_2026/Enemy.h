@@ -79,6 +79,13 @@ protected:
     void loadEnemyTexture(const std::string& path); // loads texture + centers sprite origin
     void syncSpritePosition();                      // keeps sprite centered on mHitbox every frame
     void applySpriteScale(bool faceRight);           // scales sprite to exactly match mHitbox size, flips if faceRight is false
+
+    // draws the half/full snowball overlay if this enemy is currently
+    // partially or fully encased. Returns true if it drew something
+    // (caller should skip drawing the normal enemy sprite that frame).
+    // Returns false if not encased at all (caller draws normally).
+    bool drawIfEncased(sf::RenderWindow& window);
+
     int mKickedByPlayer;
     bool mHasRebounded = false;  // true after first wall bounce
 
@@ -152,8 +159,8 @@ public:
     bool isKnifeActive() const;
 
 private:
-    // knife variables — no separate class needed
-    sf::RectangleShape mKnifeVisual;  // yellow rectangle
+    // knife — sprite instead of a plain rectangle
+    sf::Sprite mKnifeVisual;          // knife.png
     sf::Vector2f mKnifeDirection;     // normalized direction
     bool mKnifeActive;                // is knife flying right now
     float mKnifeSpeed;                // how fast knife travels
