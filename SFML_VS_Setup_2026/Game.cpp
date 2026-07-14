@@ -70,7 +70,7 @@ Game::Game()
     mPlatformCount(0), mPlatformCapacity(20),
     mEnemyCount(0), mEnemyCapacity(20),
     mSnowballCount(0), mSnowballCapacity(20),
-    mState(LEADERBOARD_SCREEN), // Changescreen
+    mState(LEVEL_COMPLETE), // Changescreen
     mLoginPlayerTurn(1),
     mTypingConfirm(false),
     mTypingUsername(true),
@@ -119,7 +119,7 @@ Game::Game()
 
     PowerUp::preloadAll();//load powerups
 
-    // first image
+    
 
     // background image for splash screen
     if (mSplashBgTexture.loadFromFile("assets/Images/startscreen.png")) {
@@ -344,7 +344,7 @@ void Game::processEvents() {
 
                 if (event.key.code == sf::Keyboard::Return) {
                     if (mMenuSelection == 0) {
-                        mCurrentLevel = 1; // changelevel
+                        mCurrentLevel = 4; // changelevel
                         mScore1 = 0;
                         mScore2 = 0;
                         mScoreSaved = false;
@@ -1339,27 +1339,27 @@ void Game::renderPlaying() {
     mPlayer1.draw(mWindow, mShowHitboxes);
     mPlayer2.draw(mWindow, mShowHitboxes);
 
-    mHUD.draw(mWindow);
+    mHUD.draw(mWindow); // PLAYER NAMES ON HUD
 
     sf::Text p1tag;
     p1tag.setFont(mFont);
     p1tag.setString(mP1Username);
-    p1tag.setCharacterSize(10);
+    p1tag.setCharacterSize(16);
     p1tag.setFillColor(sf::Color::Cyan);
-    p1tag.setPosition(10.f, 5.f);
+    p1tag.setPosition(8.f, 5.f);
     mWindow.draw(p1tag);
 
     sf::Text p2tag;
     p2tag.setFont(mFont);
     p2tag.setString(mP2Username);
-    p2tag.setCharacterSize(10);
+    p2tag.setCharacterSize(16);
     p2tag.setFillColor(sf::Color(100, 255, 150));
-    p2tag.setPosition(720.f, 5.f);
+    p2tag.setPosition(710.f, 5.f);
     mWindow.draw(p2tag);
 }
 
 
-//  LEVEL COMPLETE
+//  LEVEL COMPLETE SCREEN
 
 
 void Game::renderLevelComplete() {
@@ -1371,39 +1371,39 @@ void Game::renderLevelComplete() {
 
     sf::Text title;
     title.setFont(mFont);
-    title.setString("LEVEL COMPLETE!");
-    title.setCharacterSize(42);
+    title.setString("LEVEL COMPLETED!");
+    title.setCharacterSize(56);
     title.setFillColor(sf::Color::Yellow);
-    drawCenteredText(title, 200.f);
+    drawCenteredText(title, 120.f);
 
     sf::Text score;
     score.setFont(mFont);
     score.setString(mP1Username + ": " + std::to_string(mScore1));
-    score.setCharacterSize(24);
+    score.setCharacterSize(28);
     score.setFillColor(sf::Color::Cyan);
-    drawCenteredText(score, 290.f);
+    drawCenteredText(score, 250.f);
 
     sf::Text score2;
     score2.setFont(mFont);
     score2.setString(mP2Username + ": " + std::to_string(mScore2));
-    score2.setCharacterSize(24);
+    score2.setCharacterSize(28);
     score2.setFillColor(sf::Color(100, 255, 150));
-    drawCenteredText(score2, 330.f);
+    drawCenteredText(score2, 300.f);
 
     sf::Text gemsBonus;
     gemsBonus.setFont(mFont);
     gemsBonus.setString("P1 GEMS: " + std::to_string(mShop1.getGems()) +
-        "   P2 GEMS: " + std::to_string(mShop2.getGems()));
-    gemsBonus.setCharacterSize(22);
+        "    P2 GEMS: " + std::to_string(mShop2.getGems()));
+    gemsBonus.setCharacterSize(28);
     gemsBonus.setFillColor(sf::Color(255, 215, 0));
-    drawCenteredText(gemsBonus, 380.f);
+    drawCenteredText(gemsBonus, 377.f);
 
     sf::Text next;
     next.setFont(mFont);
     next.setString("Press ENTER to continue");
-    next.setCharacterSize(22);
-    next.setFillColor(sf::Color::White);
-    drawCenteredText(next, 420.f);
+    next.setCharacterSize(25);
+    next.setFillColor(sf::Color(128, 128, 128));
+    drawCenteredText(next, 460.f);
 }
 
 

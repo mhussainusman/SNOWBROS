@@ -14,33 +14,33 @@ bool HUD::loadFont(const std::string& fontPath) {
   
 
     // player 1 score — below label
-    setupText(mScore1Text, 14, sf::Color::White, 10.f, 25.f);
+    setupText(mScore1Text, 20, sf::Color::White, 9.f, 25.f);
     mScore1Text.setString("000000");
 
     // player 1 lives — below score
-    setupText(mLives1Text, 12, sf::Color::Yellow, 10.f, 45.f);
+    setupText(mLives1Text, 18, sf::Color::Yellow, 10.f, 45.f);
     mLives1Text.setString("LIFE: 0");
 
  
 
     // player 2 score — below label
-    setupText(mScore2Text, 14, sf::Color::White, 710.f, 25.f);
+    setupText(mScore2Text, 20, sf::Color::White, 715.f, 25.f);
     mScore2Text.setString("000000");
 
     // player 2 lives — below score
-    setupText(mLives2Text, 12, sf::Color::Yellow, 710.f, 45.f);
+    setupText(mLives2Text, 18, sf::Color::Yellow, 715.f, 45.f);
     mLives2Text.setString("LIFE: 0");
 
     // gemscount 
-    setupText(mGemText1, 12, sf::Color(0, 255, 200), 10.f, 65.f);
+    setupText(mGemText1, 18, sf::Color(0, 255, 200), 9.f, 65.f);
     mGemText1.setString("GEMS: 0");
 
-    setupText(mGemText2, 12, sf::Color(0, 255, 200), 690.f, 65.f);
+    setupText(mGemText2, 18, sf::Color(0, 255, 200), 714.f, 65.f);
     mGemText2.setString("GEMS: 0");
 
 
     // level indicator — top center
-    setupText(mLevelText, 12, sf::Color::Green, 360.f, 27.f);
+    setupText(mLevelText, 24, sf::Color(211, 211, 211), 360.f, 27.f);
     mLevelText.setString("LEVEL 1");
 
     

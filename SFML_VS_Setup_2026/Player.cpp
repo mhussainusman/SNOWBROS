@@ -299,7 +299,7 @@ void Player::loseLife() {
 
 
 void Player::resetLives() {
-    mLives = 5;//changelives
+    mLives = 6;//changelives
     mRespawning = false;
     mRespawnTimer = 0.f;
     mHitbox.setPosition(mStartX, mStartY);
