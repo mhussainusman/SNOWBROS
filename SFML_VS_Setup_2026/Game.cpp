@@ -70,7 +70,7 @@ Game::Game()
     mPlatformCount(0), mPlatformCapacity(20),
     mEnemyCount(0), mEnemyCapacity(20),
     mSnowballCount(0), mSnowballCapacity(20),
-    mState(CHARACTER_SELECT), // Changescreen
+    mState(SPLASH), // Changescreen
     mLoginPlayerTurn(1),
     mTypingConfirm(false),
     mTypingUsername(true),
@@ -340,7 +340,7 @@ void Game::processEvents() {
 
                 if (event.key.code == sf::Keyboard::Return) {
                     if (mMenuSelection == 0) {
-                        mCurrentLevel = 5; // changelevel
+                        mCurrentLevel = 1; // changelevel
                         mScore1 = 0;
                         mScore2 = 0;
                         mScoreSaved = false;
