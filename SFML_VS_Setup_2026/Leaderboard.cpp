@@ -236,7 +236,7 @@ void Leaderboard::drawTitle(sf::RenderWindow& w) {
     sf::Text shadow;
     shadow.setFont(mFont);
     shadow.setString("LEADERBOARD");
-    shadow.setCharacterSize(42);
+    shadow.setCharacterSize(48);
     shadow.setFillColor(sf::Color(0, 80, 160, 120));
     float sw = shadow.getGlobalBounds().width;
     shadow.setPosition((800.f - sw) / 2.f + 3.f, 23.f);
@@ -246,7 +246,7 @@ void Leaderboard::drawTitle(sf::RenderWindow& w) {
     sf::Text title;
     title.setFont(mFont);
     title.setString("LEADERBOARD");
-    title.setCharacterSize(42);
+    title.setCharacterSize(48);
     title.setFillColor(sf::Color(100, 200, 255));
     float tw = title.getGlobalBounds().width;
     title.setPosition((800.f - tw) / 2.f, 20.f);
@@ -256,7 +256,7 @@ void Leaderboard::drawTitle(sf::RenderWindow& w) {
     sf::Text star;
     star.setFont(mFont);
     star.setString("* TOP SCORES *");
-    star.setCharacterSize(13);
+    star.setCharacterSize(22);
     star.setFillColor(sf::Color(255, 215, 0, 200));
     float starW = star.getGlobalBounds().width;
     star.setPosition((800.f - starW) / 2.f, 72.f);
@@ -287,14 +287,14 @@ void Leaderboard::drawTable(sf::RenderWindow& w) {
         sf::Text t;
         t.setFont(mFont);
         t.setString(txt);
-        t.setCharacterSize(11);
+        t.setCharacterSize(17);
         t.setFillColor(sf::Color(180, 220, 255));
         t.setPosition(x, headerY);
         w.draw(t);
         };
     makeHeader("RANK", colRank);
     makeHeader("PLAYER", colName);
-    makeHeader("SCORE", colScore);
+    makeHeader("                    SCORE", colScore);
     makeHeader("LEVEL", colLevel);
     makeHeader("DATE", colTime);
 
@@ -349,20 +349,18 @@ void Leaderboard::drawTable(sf::RenderWindow& w) {
         sf::Text rankT;
         rankT.setFont(mFont);
         rankT.setString("#" + to_string(rank));
-        rankT.setCharacterSize(14);
+        rankT.setCharacterSize(20);
         rankT.setFillColor(rankCol);
         rankT.setPosition(colRank, rowY + 8.f);
         w.draw(rankT);
 
         // Medal for top 3
         if (rank <= 3) {
-            string medal = (rank == 1) ? "[1]"
-                : (rank == 2) ? "[2]"
-                : "[3]";
+            string medal = "";
             sf::Text medT;
             medT.setFont(mFont);
             medT.setString(medal);
-            medT.setCharacterSize(10);
+            medT.setCharacterSize(16);
             medT.setFillColor(rankCol);
             medT.setPosition(colRank, rowY + 26.f);
             w.draw(medT);
@@ -374,7 +372,7 @@ void Leaderboard::drawTable(sf::RenderWindow& w) {
         sf::Text nameT;
         nameT.setFont(mFont);
         nameT.setString(uname);
-        nameT.setCharacterSize(13);
+        nameT.setCharacterSize(19);
         nameT.setFillColor(sf::Color(220, 240, 255));
         nameT.setPosition(colName, rowY + 10.f);
         w.draw(nameT);
@@ -384,7 +382,7 @@ void Leaderboard::drawTable(sf::RenderWindow& w) {
         sf::Text scoreT;
         scoreT.setFont(mFont);
         scoreT.setString(scoreStr);
-        scoreT.setCharacterSize(13);
+        scoreT.setCharacterSize(19);
         scoreT.setFillColor(sf::Color(100, 255, 180));
         // right-align: place so right edge is at colScore + 120
         float scoreRight = colScore + 120.f;
@@ -395,7 +393,7 @@ void Leaderboard::drawTable(sf::RenderWindow& w) {
         sf::Text levelT;
         levelT.setFont(mFont);
         levelT.setString("LV " + to_string(mEntries[i].level));
-        levelT.setCharacterSize(13);
+        levelT.setCharacterSize(19);
         levelT.setFillColor(sf::Color(180, 140, 255));
         levelT.setPosition(colLevel, rowY + 10.f);
         w.draw(levelT);
@@ -406,7 +404,7 @@ void Leaderboard::drawTable(sf::RenderWindow& w) {
         sf::Text timeT;
         timeT.setFont(mFont);
         timeT.setString(ts);
-        timeT.setCharacterSize(9);
+        timeT.setCharacterSize(15);
         timeT.setFillColor(sf::Color(140, 160, 180));
         timeT.setPosition(colTime, rowY + 12.f);
         w.draw(timeT);
@@ -421,7 +419,7 @@ void Leaderboard::drawTable(sf::RenderWindow& w) {
         sf::Text empty;
         empty.setFont(mFont);
         empty.setString("NO SCORES YET — PLAY TO BE FIRST!");
-        empty.setCharacterSize(16);
+        empty.setCharacterSize(22);
         empty.setFillColor(sf::Color(150, 170, 200));
         float ew = empty.getGlobalBounds().width;
         empty.setPosition((800.f - ew) / 2.f, 300.f);
@@ -438,19 +436,19 @@ void Leaderboard::drawScrollHints(sf::RenderWindow& w) {
     if (mScrollOffset > 0) {
         sf::Text up;
         up.setFont(mFont);
-        up.setString("^ UP");
-        up.setCharacterSize(11);
-        up.setFillColor(sf::Color(180, 220, 255, 200));
-        up.setPosition(370.f, 108.f);
+        up.setString("");
+        up.setCharacterSize(17);
+        up.setFillColor(sf::Color::White);
+        up.setPosition(370.f, 113.f);
         w.draw(up);
     }
 
     if (mScrollOffset + DISPLAY_ROWS < mCount) {
         sf::Text dn;
         dn.setFont(mFont);
-        dn.setString("v DOWN");
-        dn.setCharacterSize(11);
-        dn.setFillColor(sf::Color(180, 220, 255, 200));
+        dn.setString("");
+        dn.setCharacterSize(17);
+        dn.setFillColor(sf::Color::White);
         dn.setPosition(362.f, 607.f);
         w.draw(dn);
     }
@@ -465,10 +463,10 @@ void Leaderboard::drawFooter(sf::RenderWindow& w) {
     sf::Text hint;
     hint.setFont(mFont);
     hint.setString("UP/DOWN TO SCROLL    ESC TO RETURN");
-    hint.setCharacterSize(10);
-    hint.setFillColor(sf::Color(120, 140, 180));
+    hint.setCharacterSize(18);
+    hint.setFillColor(sf::Color(255,255,255));
     float hw = hint.getGlobalBounds().width;
-    hint.setPosition((800.f - hw) / 2.f, 635.f);
+    hint.setPosition((800.f - hw) / 2.f, 628.f);
     w.draw(hint);
 }
 

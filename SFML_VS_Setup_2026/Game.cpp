@@ -70,7 +70,7 @@ Game::Game()
     mPlatformCount(0), mPlatformCapacity(20),
     mEnemyCount(0), mEnemyCapacity(20),
     mSnowballCount(0), mSnowballCapacity(20),
-    mState(SPLASH), // Changescreen
+    mState(LEADERBOARD_SCREEN), // Changescreen
     mLoginPlayerTurn(1),
     mTypingConfirm(false),
     mTypingUsername(true),
@@ -102,6 +102,10 @@ Game::Game()
     mShopPlayerTurn(1)
 
 {
+
+    mP1Username = "TestPlayer1";
+    mP2Username = "TestPlayer2";
+
     mPlatforms = new Platform[mPlatformCapacity];
     mEnemies = new Enemy * [mEnemyCapacity];
     mSnowballs = new Snowball[mSnowballCapacity];
@@ -684,7 +688,7 @@ void Game::render() {
 }
 
 
-//  LEADERBOARD
+//  LEADERBOARD 
 
 
 void Game::saveScoreToLeaderboard() {
@@ -1165,7 +1169,7 @@ void Game::handleRegisterEvent(const sf::Event& event) {
 }
 
 
-//  CHARACTER SELECT
+//  CHARACTER SELECT SCREEN
 
 
 void Game::renderCharSelect() {
@@ -1176,25 +1180,25 @@ void Game::renderCharSelect() {
     sf::Text p1name;
     p1name.setFont(mFont);
     p1name.setString("P1: " + mP1Username);
-    p1name.setCharacterSize(18);
+    p1name.setCharacterSize(26);
     p1name.setFillColor(sf::Color(135, 206, 235));
-    p1name.setPosition(190.f, 255.f);
+    p1name.setPosition(190.f, 235.f);
     mWindow.draw(p1name);
 
     // p2name — polished header
     sf::Text p2name;
     p2name.setFont(mFont);
     p2name.setString("P2: " + mP2Username);
-    p2name.setCharacterSize(18);
+    p2name.setCharacterSize(26);
     p2name.setFillColor(sf::Color(150, 255, 150));
-    p2name.setPosition(430.f, 255.f);
+    p2name.setPosition(430.f, 235.f);
     mWindow.draw(p2name);
 
     for (int i = 0; i < 3; i++) {
         float x = 150.f + i * 200.f;
         float boxW = 120.f;
         float boxH = 160.f;
-        float boxY = 330.f;
+        float boxY = 310.f;
 
         // draw outline box behind the image
         sf::RectangleShape box(sf::Vector2f(boxW, boxH));
@@ -1227,7 +1231,7 @@ void Game::renderCharSelect() {
         sf::Text name;
         name.setFont(mFont);
         name.setString(mCharacters[i].name);
-        name.setCharacterSize(14);
+        name.setCharacterSize(24);
         name.setFillColor(sf::Color::White);
         float nameX = x + (boxW - name.getGlobalBounds().width) / 2.f;
         name.setPosition(nameX, boxY + boxH + 8.f);
@@ -1240,9 +1244,9 @@ void Game::renderCharSelect() {
     p1inst.setString(mP1Selected
         ? "P1 READY: " + mCharacters[mP1CharIndex].name
         : "P1: LEFT/RIGHT TO SELECT, DOWN TO CONFIRM");
-    p1inst.setCharacterSize(13);
-    p1inst.setFillColor(mP1Selected ? sf::Color(150, 255, 150) : sf::Color(255, 255, 255));
-    drawCenteredText(p1inst, 525.f);
+    p1inst.setCharacterSize(16);
+    p1inst.setFillColor(mP1Selected ? sf::Color(150, 255, 150) : sf::Color(244, 194, 194));
+    drawCenteredText(p1inst, 547.f);
 
     // p2inst — text swaps to "READY" + turns green once confirmed
     sf::Text p2inst;
@@ -1250,13 +1254,13 @@ void Game::renderCharSelect() {
     p2inst.setString(mP2Selected
         ? "P2 READY: " + mCharacters[mP2CharIndex].name
         : "P2: A/D TO SELECT, S TO CONFIRM");
-    p2inst.setCharacterSize(13);
-    p2inst.setFillColor(mP2Selected ? sf::Color(150, 255, 150) : sf::Color(255, 255, 255));
-    drawCenteredText(p2inst, 570.f);
+    p2inst.setCharacterSize(16);
+    p2inst.setFillColor(mP2Selected ? sf::Color(150, 255, 150) : sf::Color(244, 194, 194));
+    drawCenteredText(p2inst, 580.f);
 }
 
 
-//  MAIN MENU
+//  MAIN MENU SCREEN
 
 
 void Game::renderMainMenu() {
@@ -1266,7 +1270,7 @@ void Game::renderMainMenu() {
     sf::Text title;
     title.setFont(mFont);
     title.setString("SNOW BROS");
-    title.setCharacterSize(48);
+    title.setCharacterSize(62);
     title.setFillColor(sf::Color::Red);
     drawCenteredText(title, 80.f);
 
@@ -1275,7 +1279,7 @@ void Game::renderMainMenu() {
     sf::Text players;
     players.setFont(mFont);
     players.setString(mP1Username + "  vs  " + mP2Username);
-    players.setCharacterSize(22);
+    players.setCharacterSize(34);
     players.setFillColor(sf::Color::Yellow);
     drawCenteredText(players, 200.f);
 
@@ -1285,14 +1289,14 @@ void Game::renderMainMenu() {
         sf::Text item;
         item.setFont(mFont);
         item.setString(items[i]);
-        item.setCharacterSize(20);
+        item.setCharacterSize(34);
 
         if (i == mMenuSelection) {
             item.setFillColor(sf::Color::Yellow);
             sf::Text arrow;
             arrow.setFont(mFont);
             arrow.setString(">");
-            arrow.setCharacterSize(20);
+            arrow.setCharacterSize(34);
             arrow.setFillColor(sf::Color::Yellow);
             arrow.setPosition(250.f, 290.f + i * 60.f);
             mWindow.draw(arrow);
@@ -1306,7 +1310,7 @@ void Game::renderMainMenu() {
     sf::Text hint;
     hint.setFont(mFont);
     hint.setString("UP/DOWN TO NAVIGATE   ENTER TO SELECT");
-    hint.setCharacterSize(10);
+    hint.setCharacterSize(22);
     hint.setFillColor(sf::Color(150, 150, 150));
     drawCenteredText(hint, 580.f);
 }
@@ -1368,21 +1372,21 @@ void Game::renderLevelComplete() {
     sf::Text title;
     title.setFont(mFont);
     title.setString("LEVEL COMPLETE!");
-    title.setCharacterSize(36);
+    title.setCharacterSize(42);
     title.setFillColor(sf::Color::Yellow);
     drawCenteredText(title, 200.f);
 
     sf::Text score;
     score.setFont(mFont);
     score.setString(mP1Username + ": " + std::to_string(mScore1));
-    score.setCharacterSize(18);
+    score.setCharacterSize(24);
     score.setFillColor(sf::Color::Cyan);
     drawCenteredText(score, 290.f);
 
     sf::Text score2;
     score2.setFont(mFont);
     score2.setString(mP2Username + ": " + std::to_string(mScore2));
-    score2.setCharacterSize(18);
+    score2.setCharacterSize(24);
     score2.setFillColor(sf::Color(100, 255, 150));
     drawCenteredText(score2, 330.f);
 
@@ -1390,20 +1394,20 @@ void Game::renderLevelComplete() {
     gemsBonus.setFont(mFont);
     gemsBonus.setString("P1 GEMS: " + std::to_string(mShop1.getGems()) +
         "   P2 GEMS: " + std::to_string(mShop2.getGems()));
-    gemsBonus.setCharacterSize(13);
+    gemsBonus.setCharacterSize(22);
     gemsBonus.setFillColor(sf::Color(255, 215, 0));
     drawCenteredText(gemsBonus, 380.f);
 
     sf::Text next;
     next.setFont(mFont);
     next.setString("Press ENTER to continue");
-    next.setCharacterSize(14);
+    next.setCharacterSize(22);
     next.setFillColor(sf::Color::White);
     drawCenteredText(next, 420.f);
 }
 
 
-//  PAUSED
+//  PAUSED SCREEN
 
 
 void Game::renderPaused() {
@@ -1416,36 +1420,36 @@ void Game::renderPaused() {
     sf::Text title;
     title.setFont(mFont);
     title.setString("PAUSED");
-    title.setCharacterSize(40);
+    title.setCharacterSize(52);
     title.setFillColor(sf::Color::Yellow);
-    drawCenteredText(title, 200.f);
+    drawCenteredText(title, 130.f);
 
     sf::Text resume;
     resume.setFont(mFont);
     resume.setString("R - RESUME");
-    resume.setCharacterSize(20);
+    resume.setCharacterSize(30);
     resume.setFillColor(sf::Color::White);
-    drawCenteredText(resume, 310.f);
+    drawCenteredText(resume, 250.f);
 
     sf::Text menu;
     menu.setFont(mFont);
     menu.setString("M - MAIN MENU");
-    menu.setCharacterSize(20);
+    menu.setCharacterSize(30);
     menu.setFillColor(sf::Color::White);
-    drawCenteredText(menu, 370.f);
+    drawCenteredText(menu, 310.f);
 
     sf::Text shopHint;
     shopHint.setFont(mFont);
     shopHint.setString("O - OPEN SHOP");
-    shopHint.setCharacterSize(16);
+    shopHint.setCharacterSize(28);
     shopHint.setFillColor(sf::Color(255, 215, 0));
-    drawCenteredText(shopHint, 430.f);
+    drawCenteredText(shopHint, 370.f);
 
     sf::Text gemsPaused;
     gemsPaused.setFont(mFont);
     gemsPaused.setString("P1 GEMS: " + std::to_string(mGemCount1) +
         "   P2 GEMS: " + std::to_string(mGemCount2));
-    gemsPaused.setCharacterSize(13);
+    gemsPaused.setCharacterSize(22);
     gemsPaused.setFillColor(sf::Color(100, 200, 255));
     drawCenteredText(gemsPaused, 468.f);
 }
@@ -2012,11 +2016,6 @@ void Game::renderShop() {
 
     mWindow.draw(mShopBgSprite);
 
-
-
-
-
-
     // ── Title panel ─────────────────────────────────────────────
     sf::RectangleShape titlePanel(sf::Vector2f(500.f, 50.f));
     titlePanel.setPosition(150.f, 18.f);
@@ -2035,7 +2034,7 @@ void Game::renderShop() {
     sf::Text title;
     title.setFont(mFont);
     title.setString(" SNOWBROS SHOP ");
-    title.setCharacterSize(22);
+    title.setCharacterSize(28);
     title.setFillColor(sf::Color(255, 220, 40));
     drawCenteredText(title, 26.f);
 
@@ -2043,50 +2042,30 @@ void Game::renderShop() {
     sf::Text sub;
     sub.setFont(mFont);
     sub.setString("PLAYER: " + activeUser + "    [TAB] = SWITCH PLAYER");
-    sub.setCharacterSize(10);
+    sub.setCharacterSize(18);
     sub.setFillColor(mShopPlayerTurn == 1 ?
-        sf::Color(100, 200, 255) : sf::Color(100, 255, 160));
-    drawCenteredText(sub, 74.f);
+        sf::Color(255, 255, 255) : sf::Color(250, 235, 215));
+    drawCenteredText(sub, 78.f);
 
     // ── Gem balance badge ────────────────────────────────────────
-    sf::RectangleShape gemBadge(sf::Vector2f(280.f, 40.f));
-    gemBadge.setPosition(260.f, 92.f);
-    gemBadge.setFillColor(sf::Color(30, 25, 10));
-    gemBadge.setOutlineColor(sf::Color(255, 215, 0));
-    gemBadge.setOutlineThickness(2.f);
-    mWindow.draw(gemBadge);
-
-    sf::CircleShape gemIcon(8.f, 4);
-    gemIcon.setFillColor(sf::Color(100, 220, 255));
-    gemIcon.setOutlineColor(sf::Color(200, 240, 255));
-    gemIcon.setOutlineThickness(1.5f);
-    gemIcon.setPosition(274.f, 100.f);
-    gemIcon.setRotation(45.f);
-    mWindow.draw(gemIcon);
 
     sf::Text gemsLabel;
     gemsLabel.setFont(mFont);
     Shop& activeShop = (mShopPlayerTurn == 1) ? mShop1 : mShop2;
     gemsLabel.setString("GEMS:  " + std::to_string(activeShop.getGems()));
-    gemsLabel.setCharacterSize(15);
+    gemsLabel.setCharacterSize(22);
     gemsLabel.setFillColor(sf::Color(255, 215, 0));
-    gemsLabel.setPosition(298.f, 101.f);
+    gemsLabel.setPosition(355.f, 106.f);
     mWindow.draw(gemsLabel);
 
-    // ── Earn-rates info bar ──────────────────────────────────────
-    sf::RectangleShape earnBar(sf::Vector2f(640.f, 24.f));
-    earnBar.setPosition(80.f, 140.f);
-    earnBar.setFillColor(sf::Color(15, 20, 55));
-    earnBar.setOutlineColor(sf::Color(40, 80, 160));
-    earnBar.setOutlineThickness(1.f);
-    mWindow.draw(earnBar);
+ 
 
     sf::Text earnInfo;
     earnInfo.setFont(mFont);
     earnInfo.setString("EARN:  boss kill +200   level complete +20");
-    earnInfo.setCharacterSize(9);
-    earnInfo.setFillColor(sf::Color(120, 180, 255));
-    earnInfo.setPosition(90.f, 148.f);
+    earnInfo.setCharacterSize(18);
+    earnInfo.setFillColor(sf::Color(255, 255, 255));
+    earnInfo.setPosition(90.f, 143.f);
     mWindow.draw(earnInfo);
 
     // ── Item rows ────────────────────────────────────────────────
@@ -2122,7 +2101,7 @@ void Game::renderShop() {
             sf::Text arrow;
             arrow.setFont(mFont);
             arrow.setString(">");
-            arrow.setCharacterSize(16);
+            arrow.setCharacterSize(22);
             arrow.setFillColor(tagColors[i]);
             arrow.setPosition(90.f, rowY + 12.f);
             mWindow.draw(arrow);
@@ -2131,7 +2110,7 @@ void Game::renderShop() {
         sf::Text nameText;
         nameText.setFont(mFont);
         nameText.setString(info.name);
-        nameText.setCharacterSize(13);
+        nameText.setCharacterSize(19);
         nameText.setFillColor(selected ? tagColors[i] : sf::Color(220, 220, 220));
         nameText.setPosition(108.f, rowY + 8.f);
         mWindow.draw(nameText);
@@ -2163,7 +2142,7 @@ void Game::renderShop() {
         sf::Text costText;
         costText.setFont(mFont);
         costText.setString(std::to_string(info.cost) + " GEM");
-        costText.setCharacterSize(11);
+        costText.setCharacterSize(17);
         costText.setFillColor(costTxt);
         costText.setPosition(615.f, rowY + 26.f);
         mWindow.draw(costText);
@@ -2183,7 +2162,7 @@ void Game::renderShop() {
         sf::Text msgTxt;
         msgTxt.setFont(mFont);
         msgTxt.setString(lastMsg);
-        msgTxt.setCharacterSize(12);
+        msgTxt.setCharacterSize(18);
         msgTxt.setFillColor(isBad ? sf::Color(255, 100, 100) : sf::Color(100, 255, 130));
         drawCenteredText(msgTxt, 598.f);
     }
