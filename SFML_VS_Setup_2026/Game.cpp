@@ -70,7 +70,7 @@ Game::Game()
     mPlatformCount(0), mPlatformCapacity(20),
     mEnemyCount(0), mEnemyCapacity(20),
     mSnowballCount(0), mSnowballCapacity(20),
-    mState(LEVEL_COMPLETE), // Changescreen
+    mState(SPLASH), // Changescreen
     mLoginPlayerTurn(1),
     mTypingConfirm(false),
     mTypingUsername(true),
@@ -344,7 +344,7 @@ void Game::processEvents() {
 
                 if (event.key.code == sf::Keyboard::Return) {
                     if (mMenuSelection == 0) {
-                        mCurrentLevel = 4; // changelevel
+                        mCurrentLevel = 1; // changelevel
                         mScore1 = 0;
                         mScore2 = 0;
                         mScoreSaved = false;
@@ -1092,9 +1092,9 @@ void Game::handleRegisterEvent(const sf::Event& event) {
                 mLoginMessage.clear();
             }
             else if (mLoginState == LoginState::TYPING_PASS && !mTypingConfirm) {
-                if (mPasswordInput.empty()) {
+                if (mPasswordInput.size()!=4) {
                     mLoginSuccess = false;
-                    mLoginMessage = "PASSWORD CANNOT BE EMPTY.";
+                    mLoginMessage = "PASSWORD MUST BE EXACTLY 4 CHARACTERS.";
                     return;
                 }
                 mTypingConfirm = true;

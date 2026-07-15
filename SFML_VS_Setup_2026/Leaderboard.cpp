@@ -95,11 +95,31 @@ void Leaderboard::trimToMax() {
     if (mCount > MAX_ENTRIES)
         mCount = MAX_ENTRIES;
 }
-
-// ================================================================
-//  ADD ENTRY
-// ================================================================
+//====================================
+// ADD ENTRY
+//====================================
 void Leaderboard::addEntry(const string& username, int score, int level) {
+
+    // check if this username already has an entry — if so, only overwrite
+    // it when the new score beats their previous best. Usernames are
+    // persistent accounts now (not anonymous arcade credits), so each
+    // player should own exactly one row.
+    for (int i = 0; i < mCount; i++) {
+        if (mEntries[i].username == username) {
+            if (score > mEntries[i].score) {
+                mEntries[i].score = score;
+                mEntries[i].level = level;
+                mEntries[i].timestamp = currentTimestamp();
+            }
+            // score <= their existing best — leave their row untouched
+            sortEntries();
+            trimToMax();
+            save();
+            return;
+        }
+    }
+
+    // new player — no existing entry found, add a fresh row
     if (mCount < MAX_ENTRIES) {
         mEntries[mCount].username = username;
         mEntries[mCount].score = score;
