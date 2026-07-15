@@ -535,6 +535,17 @@ void Tornado::setNearestPlayerPos(sf::Vector2f pos) {
 void Tornado::update(float deltaTime,
     const Platform* platforms, int platformCount) {
 
+    if (mKnifeActive) {
+        mKnifeVisual.move(
+            mKnifeDirection.x * mKnifeSpeed * deltaTime,
+            mKnifeDirection.y * mKnifeSpeed * deltaTime);
+
+        sf::Vector2f kPos = mKnifeVisual.getPosition();
+        if (kPos.x < -20.f || kPos.x > 820.f ||
+            kPos.y < -20.f || kPos.y > 620.f)
+            mKnifeActive = false;
+    }
+
     if (mRolling) {
         updateRolling(deltaTime, platforms, platformCount);
         return;
@@ -557,7 +568,7 @@ void Tornado::update(float deltaTime,
     // call FlyingEnemy update for movement
     FlyingEnemy::update(deltaTime, platforms, platformCount);
 
-    // --- KNIFE THROWING ---
+    // --- KNIFE THROWING — only while Tornado is fully active ---
     mKnifeTimer += deltaTime;
 
     if (mKnifeTimer >= mKnifeInterval && !mKnifeActive) {
@@ -581,24 +592,7 @@ void Tornado::update(float deltaTime,
             myPos.x + mHitbox.getSize().x / 2.f,
             myPos.y + mHitbox.getSize().y / 2.f);
 
-        // point the knife sprite toward its throw direction
-        float angleDeg = atan2(mKnifeDirection.y, mKnifeDirection.x) * 180.f / 3.14159265f;
-        mKnifeVisual.setRotation(angleDeg);
-
         mKnifeActive = true;
-    }
-
-    // --- KNIFE MOVEMENT ---
-    if (mKnifeActive) {
-        mKnifeVisual.move(
-            mKnifeDirection.x * mKnifeSpeed * deltaTime,
-            mKnifeDirection.y * mKnifeSpeed * deltaTime);
-
-        // deactivate knife when off screen
-        sf::Vector2f kPos = mKnifeVisual.getPosition();
-        if (kPos.x < -20.f || kPos.x > 820.f ||
-            kPos.y < -20.f || kPos.y > 620.f)
-            mKnifeActive = false;
     }
 }
 

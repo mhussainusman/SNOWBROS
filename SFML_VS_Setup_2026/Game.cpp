@@ -1078,6 +1078,22 @@ void Game::handleRegisterEvent(const sf::Event& event) {
             mState = LOGIN;
             return;
         }
+        // TAB- Move between fields
+     
+        if (event.key.code == sf::Keyboard::Tab) {
+            if (mLoginState == LoginState::TYPING_USER) {
+                mLoginState = LoginState::TYPING_PASS;
+                mTypingConfirm = false;
+            }
+            else if (mLoginState == LoginState::TYPING_PASS && !mTypingConfirm) {
+                mTypingConfirm = true;
+            }
+            else if (mTypingConfirm) {
+                mTypingConfirm = false;
+                mLoginState = LoginState::TYPING_USER;
+            }
+            mLoginMessage.clear();
+        }
 
         // Enter — advance fields or submit
         if (event.key.code == sf::Keyboard::Enter) {
@@ -1094,9 +1110,11 @@ void Game::handleRegisterEvent(const sf::Event& event) {
             else if (mLoginState == LoginState::TYPING_PASS && !mTypingConfirm) {
                 if (mPasswordInput.size()!=4) {
                     mLoginSuccess = false;
-                    mLoginMessage = "PASSWORD MUST BE EXACTLY 4 CHARACTERS.";
+                   mPasswordInput.empty()? mLoginMessage = "PASSWORD CANNOT BE EMPTY.": mLoginMessage = "PASSWORD MUST BE EXACTLY 4 CHARACTERS.";
                     return;
                 }
+
+
                 mTypingConfirm = true;
                 mLoginMessage.clear();
             }
