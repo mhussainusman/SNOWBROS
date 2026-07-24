@@ -11,6 +11,7 @@
 #include "Shop.h"
 #include "PowerUp.h"
 #include "Boss.h"
+#include "AudioManager.h"
 #include <fstream>
 #include <string>
 using namespace std;
@@ -156,6 +157,7 @@ private:
     void updatePaused();
     void updateGameOver();
     void updateVictory();
+    void updateBackgroundMusic();
 
     // ---------------------------------------------------------------
     // SCREEN RENDERS
@@ -227,7 +229,7 @@ private:
     Leaderboard  mLeaderboard;
     HUD          mHUD;
     LevelManager mLevelManager;
-
+    AudioManager mAudio;
     // ---------------------------------------------------------------
     // CHARACTER SELECT
     // ---------------------------------------------------------------

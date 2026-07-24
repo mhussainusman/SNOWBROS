@@ -70,7 +70,7 @@ Game::Game()
     mPlatformCount(0), mPlatformCapacity(20),
     mEnemyCount(0), mEnemyCapacity(20),
     mSnowballCount(0), mSnowballCapacity(20),
-	mState(SPLASH), // Changescreen (SPLASH -> LOGIN -> MAIN_MENU -> PLAYING -> PAUSED -> GAME_OVER -> VICTORY)
+	mState(MAIN_MENU), // Changescreen (SPLASH -> LOGIN -> MAIN_MENU -> PLAYING -> PAUSED -> GAME_OVER -> VICTORY)
     mLoginPlayerTurn(1),
     mTypingConfirm(false),
     mTypingUsername(true),
@@ -354,7 +354,7 @@ void Game::processEvents() {
 
                 if (event.key.code == sf::Keyboard::Return) {
                     if (mMenuSelection == 0) {
-                        mCurrentLevel = 1; // changelevel
+                        mCurrentLevel = 4; // changelevel
                         mScore1 = 0;
                         mScore2 = 0;
                         mScoreSaved = false;
@@ -479,6 +479,7 @@ void Game::processEvents() {
 
 
 void Game::update(float deltaTime) {
+    updateBackgroundMusic();
     switch (mState) {
     case SPLASH:                                          break;
     case LOGIN:              updateLogin();               break;
@@ -2269,4 +2270,16 @@ void Game::drawBackground() {
         bgIndex = 3;  // img4
 
     mWindow.draw(mBgSprites[bgIndex]);
+}
+// bg music
+void Game::updateBackgroundMusic() {
+    if (mState != PLAYING) {
+        mAudio.playMusic("assets/Sounds/screen.ogg");
+        return;
+    }
+
+    if (mCurrentLevel == 5 || mCurrentLevel == 10)
+        mAudio.playMusic("assets/Sounds/boss.ogg");
+    else
+        mAudio.playMusic("assets/Sounds/level.ogg");
 }
