@@ -70,7 +70,7 @@ Game::Game()
     mPlatformCount(0), mPlatformCapacity(20),
     mEnemyCount(0), mEnemyCapacity(20),
     mSnowballCount(0), mSnowballCapacity(20),
-	mState(MAIN_MENU), // Changescreen (SPLASH -> LOGIN -> MAIN_MENU -> PLAYING -> PAUSED -> GAME_OVER)
+	mState(SPLASH), // Changescreen (SPLASH -> LOGIN -> MAIN_MENU -> PLAYING -> PAUSED -> GAME_OVER -> VICTORY)
     mLoginPlayerTurn(1),
     mTypingConfirm(false),
     mTypingUsername(true),
@@ -187,6 +187,15 @@ Game::Game()
         mGameOverBgSprite.setScale(
             800.f / mGameOverBgTexture.getSize().x,
             660.f / mGameOverBgTexture.getSize().y
+        );
+    }
+
+    if (mVictoryBgTexture.loadFromFile("assets/Images/victoryScreen.png")) {
+        mVictoryBgTexture.setSmooth(true);
+        mVictoryBgSprite.setTexture(mVictoryBgTexture);
+        mVictoryBgSprite.setScale(
+            800.f / mVictoryBgTexture.getSize().x,
+            660.f / mVictoryBgTexture.getSize().y
         );
     }
 
@@ -345,7 +354,7 @@ void Game::processEvents() {
 
                 if (event.key.code == sf::Keyboard::Return) {
                     if (mMenuSelection == 0) {
-                        mCurrentLevel = 9; // changelevel
+                        mCurrentLevel = 1; // changelevel
                         mScore1 = 0;
                         mScore2 = 0;
                         mScoreSaved = false;
@@ -1405,7 +1414,11 @@ void Game::renderLevelComplete() {
 
     sf::Text title;
     title.setFont(mFont);
-    title.setString("LEVEL COMPLETED!");
+
+    if (mCurrentLevel == 5)       title.setString("HELL OF A LOOT!");      // just finished level 4
+    else if (mCurrentLevel == 10) title.setString("HELL OF A LOOT!");      // just finished level 9
+    else                          title.setString("LEVEL COMPLETED!");
+   
     title.setCharacterSize(56);
     title.setFillColor(sf::Color::Yellow);
     drawCenteredText(title, 120.f);
@@ -1522,44 +1535,46 @@ void Game::renderGameOver() {
 }
 
 
-//  VICTORY
+//  VICTORY SCREEN
 
 
 void Game::renderVictory() {
+    mWindow.draw(mVictoryBgSprite);
+
     sf::Text title;
     title.setFont(mFont);
-    title.setString("YOU WIN!");
-    title.setCharacterSize(48);
+    title.setString("W TAKEN!");
+    title.setCharacterSize(60);
     title.setFillColor(sf::Color::Yellow);
-    drawCenteredText(title, 150.f);
+    drawCenteredText(title, 80.f);
 
     sf::Text congrats;
     congrats.setFont(mFont);
-    congrats.setString("CONGRATULATIONS!");
-    congrats.setCharacterSize(20);
-    congrats.setFillColor(sf::Color::White);
-    drawCenteredText(congrats, 230.f);
+    congrats.setString("CERTIFIED ICE COLD!");
+    congrats.setCharacterSize(36);
+    congrats.setFillColor(sf::Color(180, 230, 255));
+    drawCenteredText(congrats, 170.f);
 
     sf::Text s1;
     s1.setFont(mFont);
     s1.setString(mP1Username + " SCORE: " + std::to_string(mScore1));
-    s1.setCharacterSize(18);
+    s1.setCharacterSize(28);
     s1.setFillColor(sf::Color::Cyan);
-    drawCenteredText(s1, 310.f);
+    drawCenteredText(s1, 280.f);
 
     sf::Text s2;
     s2.setFont(mFont);
     s2.setString(mP2Username + " SCORE: " + std::to_string(mScore2));
-    s2.setCharacterSize(18);
+    s2.setCharacterSize(28);
     s2.setFillColor(sf::Color(100, 255, 150));
-    drawCenteredText(s2, 350.f);
+    drawCenteredText(s2, 335.f);
 
     sf::Text hint;
     hint.setFont(mFont);
     hint.setString("PRESS ENTER TO RETURN TO MENU");
-    hint.setCharacterSize(14);
+    hint.setCharacterSize(22);
     hint.setFillColor(sf::Color(150, 150, 150));
-    drawCenteredText(hint, 480.f);
+    drawCenteredText(hint, 500.f);
 }
 
 

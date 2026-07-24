@@ -78,6 +78,9 @@ private:
     // Game over bg
     sf::Texture mGameOverBgTexture;
     sf::Sprite  mGameOverBgSprite;
+	// Victory bg
+    sf::Texture mVictoryBgTexture;
+    sf::Sprite  mVictoryBgSprite;
 
     // Which player is currently logging in (1 or 2)
     int mLoginPlayerTurn;        // 1 = P1 logging in, 2 = P2 logging in
