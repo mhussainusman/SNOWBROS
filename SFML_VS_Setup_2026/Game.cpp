@@ -345,7 +345,7 @@ void Game::processEvents() {
 
                 if (event.key.code == sf::Keyboard::Return) {
                     if (mMenuSelection == 0) {
-                        mCurrentLevel = 4; // changelevel
+                        mCurrentLevel = 9; // changelevel
                         mScore1 = 0;
                         mScore2 = 0;
                         mScoreSaved = false;
@@ -1375,6 +1375,21 @@ void Game::renderPlaying() {
     p2tag.setFillColor(sf::Color(100, 255, 150));
     p2tag.setPosition(710.f, 5.f);
     mWindow.draw(p2tag);
+
+// A timer added on lvl 4 & 9 to warn players before the power ups disappears.
+    if (mCurrentLevel == 4 || mCurrentLevel == 9) {
+        float timeLeft = 10.f - mBonusTimerClock.getElapsedTime().asSeconds();
+        if (timeLeft < 0.f) timeLeft = 0.f;
+
+        sf::Text bonusTimer;
+        bonusTimer.setFont(mFont);
+        bonusTimer.setString(std::to_string((int)timeLeft) + "s");
+        bonusTimer.setCharacterSize(26);
+        bonusTimer.setFillColor(sf::Color(0, 255, 0));
+        bonusTimer.setPosition(385.f, 52.f);
+        mWindow.draw(bonusTimer);
+    }
+
 }
 
 
@@ -1582,6 +1597,10 @@ void Game::loadCurrentLevel() {
 
     mShop1.onNewLevel();
     mShop2.onNewLevel();
+
+    // restart the hardcoded bonus-level display timer whenever levels 4/9 load
+    if (mCurrentLevel == 4 || mCurrentLevel == 9)
+        mBonusTimerClock.restart();
 }
 
 void Game::checkLevelComplete() {
@@ -2224,7 +2243,7 @@ void Game::drawBackground() {
     if (!mBgLoaded) return;
 
     int bgIndex = 0;
-
+   
     if (mCurrentLevel >= 1 && mCurrentLevel <= 4)
         bgIndex = 0;  // img1
     else if (mCurrentLevel == 5)
