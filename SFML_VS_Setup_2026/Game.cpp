@@ -70,7 +70,7 @@ Game::Game()
     mPlatformCount(0), mPlatformCapacity(20),
     mEnemyCount(0), mEnemyCapacity(20),
     mSnowballCount(0), mSnowballCapacity(20),
-    mState(SPLASH), // Changescreen
+	mState(MAIN_MENU), // Changescreen (SPLASH -> LOGIN -> MAIN_MENU -> PLAYING -> PAUSED -> GAME_OVER)
     mLoginPlayerTurn(1),
     mTypingConfirm(false),
     mTypingUsername(true),
@@ -99,7 +99,8 @@ Game::Game()
     mLeaderboardKeyHeld(false),
     mScoreSaved(false),
     mShopReturnState(PAUSED),
-    mShopPlayerTurn(1)
+    mShopPlayerTurn(1),
+    mKeepPowerThisTransition(false)
 
 {
 
@@ -344,7 +345,7 @@ void Game::processEvents() {
 
                 if (event.key.code == sf::Keyboard::Return) {
                     if (mMenuSelection == 0) {
-                        mCurrentLevel = 1; // changelevel
+                        mCurrentLevel = 4; // changelevel
                         mScore1 = 0;
                         mScore2 = 0;
                         mScoreSaved = false;
@@ -1568,10 +1569,16 @@ void Game::loadCurrentLevel() {
 
 
     mPowerUpCount = 0;
-    mSnowballPower1 = false;
-    mSnowballPower2 = false;
-    mDistanceBoost1 = false;
-    mDistanceBoost2 = false;
+    if (!mKeepPowerThisTransition) {
+        mSnowballPower1 = false;
+        mSnowballPower2 = false;
+        mDistanceBoost1 = false;
+        mDistanceBoost2 = false;
+    }
+    mKeepPowerThisTransition = false; // only ever protects one transition
+
+    if (mCurrentLevel == 4) spawnBonusCorridor(9);
+    else if (mCurrentLevel == 9) spawnBonusCorridor(10);
 
     mShop1.onNewLevel();
     mShop2.onNewLevel();
@@ -1587,7 +1594,11 @@ void Game::checkLevelComplete() {
         mShop2.addGems(10);
         mGemCount1 += 10;
         mGemCount2 += 10;
+
+        if (mCurrentLevel == 4 || mCurrentLevel == 9)
+            mKeepPowerThisTransition = true;
         mCurrentLevel++;
+
         mState = LEVEL_COMPLETE;
 
     }
@@ -1839,6 +1850,20 @@ void Game::spawnPowerUp(float x, float y) {
     else                type = BALLOON_MODE;
 
     addPowerUp(PowerUp(x, y, type));
+}
+void Game::spawnBonusCorridor(int count) {
+    if (mPlatformCount == 0) return;
+
+    for (int i = 0; i < count; i++) {
+        int platIndex = rand() % mPlatformCount;
+        sf::FloatRect plat = mPlatforms[platIndex].getBounds();
+
+        float maxOffset = (plat.width > 32.f) ? (plat.width - 32.f) : 1.f;
+        float x = plat.left + (rand() % (int)maxOffset);
+        float y = plat.top - 32.f;
+
+        spawnPowerUp(x, y); // reuses your existing weighted random type pick
+    }
 }
 
 void Game::checkPowerUpCollection() {
