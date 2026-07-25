@@ -70,7 +70,7 @@ Game::Game()
     mPlatformCount(0), mPlatformCapacity(20),
     mEnemyCount(0), mEnemyCapacity(20),
     mSnowballCount(0), mSnowballCapacity(20),
-	mState(MAIN_MENU), // Changescreen (SPLASH -> LOGIN -> MAIN_MENU -> PLAYING -> PAUSED -> GAME_OVER -> VICTORY)
+	mState(SPLASH), // Changescreen (SPLASH -> LOGIN -> MAIN_MENU -> PLAYING -> PAUSED -> GAME_OVER -> VICTORY)
     mLoginPlayerTurn(1),
     mTypingConfirm(false),
     mTypingUsername(true),
@@ -297,8 +297,11 @@ void Game::processEvents() {
 
         // SPLASH -> LOGIN via ENTER (latest control scheme)
         if (mState == SPLASH && event.type == sf::Event::KeyPressed)
-            if (event.key.code == sf::Keyboard::Enter)
-                mState = LOGIN;
+            if (event.key.code == sf::Keyboard::Enter) {
+				mAudio.playEffect("assets/Sounds/menu.ogg");
+				mState = LOGIN;
+            }
+                
 
         // Route all login / register input first
         if (mState == LOGIN)    handleLoginEvent(event);
@@ -308,6 +311,7 @@ void Game::processEvents() {
 
             // Escape: pause / unpause
             if (event.key.code == sf::Keyboard::Escape) {
+                mAudio.playEffect("assets/Sounds/menu.ogg");
                 if (mState == PLAYING)
                     mState = PAUSED;
                 else if (mState == PAUSED)
@@ -346,15 +350,19 @@ void Game::processEvents() {
                 if (event.key.code == sf::Keyboard::Up ||
                     event.key.code == sf::Keyboard::W)
                     mMenuSelection--;
+                    mAudio.playEffect("assets/Sounds/menu.ogg");
+
                 if (event.key.code == sf::Keyboard::Down ||
                     event.key.code == sf::Keyboard::S)
                     mMenuSelection++;
+                    mAudio.playEffect("assets/Sounds/menu.ogg");
+                
                 if (mMenuSelection < 0) mMenuSelection = 3;
                 if (mMenuSelection > 3) mMenuSelection = 0;
 
                 if (event.key.code == sf::Keyboard::Return) {
                     if (mMenuSelection == 0) {
-                        mCurrentLevel = 4; // changelevel
+                        mCurrentLevel = 1; // changelevel
                         mScore1 = 0;
                         mScore2 = 0;
                         mScoreSaved = false;
@@ -382,20 +390,26 @@ void Game::processEvents() {
             // Character select navigation
             if (mState == CHARACTER_SELECT) {
                 if (!mP1Selected) {
-                    if (event.key.code == sf::Keyboard::Left)  mP1CharIndex--;
-                    if (event.key.code == sf::Keyboard::Right) mP1CharIndex++;
+                    if (event.key.code == sf::Keyboard::Left) { mP1CharIndex--;   mAudio.playEffect("assets/Sounds/menu.ogg"); }
+                    if (event.key.code == sf::Keyboard::Right) { mP1CharIndex++;   mAudio.playEffect("assets/Sounds/menu.ogg"); }
                     if (mP1CharIndex < 0) mP1CharIndex = 2;
                     if (mP1CharIndex > 2) mP1CharIndex = 0;
-                    if (event.key.code == sf::Keyboard::Down)
+                    if (event.key.code == sf::Keyboard::Down) {
+                        mAudio.playEffect("assets/Sounds/menu.ogg");
                         mP1Selected = true;
+                    }
+                      
                 }
                 if (!mP2Selected) {
-                    if (event.key.code == sf::Keyboard::A) mP2CharIndex--;
-                    if (event.key.code == sf::Keyboard::D) mP2CharIndex++;
+                    if (event.key.code == sf::Keyboard::A) { mP2CharIndex--;   mAudio.playEffect("assets/Sounds/menu.ogg"); }
+                    if (event.key.code == sf::Keyboard::D) { mP2CharIndex++;   mAudio.playEffect("assets/Sounds/menu.ogg"); }
                     if (mP2CharIndex < 0) mP2CharIndex = 2;
                     if (mP2CharIndex > 2) mP2CharIndex = 0;
-                    if (event.key.code == sf::Keyboard::S)
+                    if (event.key.code == sf::Keyboard::S) {
+                        mAudio.playEffect("assets/Sounds/menu.ogg");
                         mP2Selected = true;
+                    }
+                     
                 }
                 if (mP1Selected && mP2Selected) {
                     // hook up chosen sprite to each player (Tier 1 sprite integration)
@@ -412,13 +426,21 @@ void Game::processEvents() {
                 mState = PLAYING;
             }
 
+
             // Pause menu
             if (mState == PAUSED) {
-                if (event.key.code == sf::Keyboard::R)
+                if (event.key.code == sf::Keyboard::R) {
+					mAudio.playEffect("assets/Sounds/menu.ogg");
                     mState = PLAYING;
-                if (event.key.code == sf::Keyboard::M)
+                }
+                  
+                if (event.key.code == sf::Keyboard::M) {
+                    mAudio.playEffect("assets/Sounds/menu.ogg");
                     mState = MAIN_MENU;
+                }
+                    
                 if (event.key.code == sf::Keyboard::O) {
+                    mAudio.playEffect("assets/Sounds/menu.ogg");
                     mShopPlayerTurn = 1;
                     mShop1.setSelectedIndex(0);
                     mShop2.setSelectedIndex(0);
@@ -427,27 +449,36 @@ void Game::processEvents() {
                 }
             }
 
+            // SHOP SCREEN
+
             if (mState == SHOP_SCREEN) {
                 Shop& activeShop = (mShopPlayerTurn == 1) ? mShop1 : mShop2;
 
-                if (event.key.code == sf::Keyboard::Escape)
+                if (event.key.code == sf::Keyboard::Escape) {
+                    mAudio.playEffect("assets/Sounds/menu.ogg");
                     mState = mShopReturnState;
+                }
 
                 // Tab switches between P1 and P2 shop
-                if (event.key.code == sf::Keyboard::Tab)
+                if (event.key.code == sf::Keyboard::Tab) {
                     mShopPlayerTurn = (mShopPlayerTurn == 1) ? 2 : 1;
+                    mAudio.playEffect("assets/Sounds/menu.ogg");
+                }
 
                 if (event.key.code == sf::Keyboard::Up) {
                     int idx = activeShop.getSelectedIndex() - 1;
                     if (idx < 0) idx = ITEM_COUNT - 1;
                     activeShop.setSelectedIndex(idx);
+                    mAudio.playEffect("assets/Sounds/menu.ogg");
                 }
                 if (event.key.code == sf::Keyboard::Down) {
                     int idx = activeShop.getSelectedIndex() + 1;
                     if (idx >= ITEM_COUNT) idx = 0;
                     activeShop.setSelectedIndex(idx);
+                    mAudio.playEffect("assets/Sounds/menu.ogg");
                 }
                 if (event.key.code == sf::Keyboard::Return) {
+                    mAudio.playEffect("assets/Sounds/menu.ogg");
                     ShopItem item = (ShopItem)activeShop.getSelectedIndex();
                     if (activeShop.purchase(item)) {
                         applyShopPurchase(item, mShopPlayerTurn);
@@ -463,13 +494,19 @@ void Game::processEvents() {
 
             // Game over — press enter to go to menu
             if (mState == GAME_OVER &&
-                event.key.code == sf::Keyboard::Return)
+                event.key.code == sf::Keyboard::Return) {
+                mAudio.playEffect("assets/Sounds/menu.ogg");
                 mState = MAIN_MENU;
+            }
+                
 
             // Victory — press enter to go to menu
             if (mState == VICTORY &&
-                event.key.code == sf::Keyboard::Return)
+                event.key.code == sf::Keyboard::Return) {
                 mState = MAIN_MENU;
+                mAudio.playEffect("assets/Sounds/menu.ogg");
+            }
+                
         }
     }
 }
@@ -481,11 +518,7 @@ void Game::processEvents() {
 void Game::update(float deltaTime) {
     updateBackgroundMusic();
     switch (mState) {
-    case SPLASH:                                          break;
-    case LOGIN:              updateLogin();               break;
-    case REGISTER:           updateRegister();            break;
-    case CHARACTER_SELECT:   updateCharSelect();          break;
-    case MAIN_MENU:          updateMainMenu();            break;
+
     case PLAYING:            updatePlaying(deltaTime);    break;
         // case LEVEL_COMPLETE:     updateLevelComplete(deltaTime); break;
     case PAUSED:             updatePaused();              break;
@@ -496,21 +529,7 @@ void Game::update(float deltaTime) {
     }
 }
 
-void Game::updateLogin() {
-    // handled in handleLoginEvent
-}
 
-void Game::updateRegister() {
-    // handled in handleRegisterEvent
-}
-
-void Game::updateCharSelect() {
-    // handled in processEvents
-}
-
-void Game::updateMainMenu() {
-    // handled in processEvents
-}
 
 void Game::updatePlaying(float deltaTime) {
 
@@ -526,6 +545,7 @@ void Game::updatePlaying(float deltaTime) {
 
     if (mGameOver) {
         mState = GAME_OVER;
+        mAudio.playEffect("assets/Sounds/game over.ogg");
         return;
     }
 
@@ -543,6 +563,7 @@ void Game::updatePlaying(float deltaTime) {
 
         if (mDistanceBoost1) s.setMaxDistance(800.f); // distance boost active? :: increase snowball range
         addSnowball(s);
+        mAudio.playEffect("assets/Sounds/snowball throw.ogg");
     }
 
     // player 2 throw
@@ -553,6 +574,7 @@ void Game::updatePlaying(float deltaTime) {
         Snowball s(snowX, snowY, mPlayer2.isFacingRight(), 1);
         if (mDistanceBoost2) s.setMaxDistance(800.f);
         addSnowball(s);
+        mAudio.playEffect("assets/Sounds/snowball throw.ogg");
     }
 
     // update snowballs
@@ -571,7 +593,18 @@ void Game::updatePlaying(float deltaTime) {
     // update enemies
     for (int i = 0; i < mEnemyCount; i++)
     {
+        // check if enemy is about to unfreeze this frame
+        bool wasEncased = mEnemies[i]->isFullyEncased() ||
+            mEnemies[i]->isPartiallyEncased();
+
         mEnemies[i]->update(deltaTime, mPlatforms, mPlatformCount);
+
+        // if enemy was frozen before update but is now free — play unfreeze sound
+        bool isNowFree = !mEnemies[i]->isFullyEncased() &&
+            !mEnemies[i]->isPartiallyEncased();
+
+        if (wasEncased && isNowFree && !mEnemies[i]->isRolling())
+            mAudio.playEffect("assets/Sounds/unfroze.ogg");
 
         // Mogera — collect spawned children
         Mogera* mogera = dynamic_cast<Mogera*>(mEnemies[i]);
@@ -598,11 +631,16 @@ void Game::updatePlaying(float deltaTime) {
             // check rocket hits on players
             if (mPlayer1.isAlive() && !mPlayer1.isRespawning())
                 if (gama->checkRocketHit(mPlayer1.getBounds()))
-                    mPlayer1.loseLife();
+                { mPlayer1.loseLife();
+            mAudio.playEffect("assets/Sounds/life-lost.ogg");
+        }
 
             if (mPlayer2.isAlive() && !mPlayer2.isRespawning())
                 if (gama->checkRocketHit(mPlayer2.getBounds()))
+                {
                     mPlayer2.loseLife();
+                    mAudio.playEffect("assets/Sounds/life-lost.ogg");
+                }
         }
     }
 
@@ -630,6 +668,7 @@ void Game::updatePlaying(float deltaTime) {
                     float dropY = b.top + (rand() % (int)b.height);
                     addPowerUp(PowerUp(dropX, dropY, GEM));
                 }
+                mAudio.playEffect("assets/Sounds/bossDead.ogg");
             }
 
             delete mEnemies[i];
@@ -1623,6 +1662,7 @@ void Game::checkLevelComplete() {
     if (mEnemyCount == 0 && mPowerUpCount == 0) {
         if (mCurrentLevel >= mLevelManager.getTotalLevels()) {
             mState = VICTORY;
+            mAudio.playEffect("assets/Sounds/lvl comp-victory.ogg");
             return;
         }
         mShop1.addGems(10);
@@ -1630,11 +1670,12 @@ void Game::checkLevelComplete() {
         mGemCount1 += 10;
         mGemCount2 += 10;
 
-        if (mCurrentLevel == 4 || mCurrentLevel == 9)
-            mKeepPowerThisTransition = true;
-        mCurrentLevel++;
+        if (mCurrentLevel == 4 || mCurrentLevel == 9){ mKeepPowerThisTransition = true; }
+           
+            mCurrentLevel++;
+            mState = LEVEL_COMPLETE;
+            mAudio.playEffect("assets/Sounds/lvl comp-victory.ogg");
 
-        mState = LEVEL_COMPLETE;
 
     }
 }
@@ -1657,12 +1698,18 @@ void Game::checkSnowballEnemyCollision() {
                 }
                
                 else {
+                    bool wasEncased = mEnemies[j]->isFullyEncased();
+
                     bool p1Power = mSnowballs[i].getPlayerIndex() == 0 && mSnowballPower1;
                     bool p2Power = mSnowballs[i].getPlayerIndex() == 1 && mSnowballPower2;
                     if (p1Power || p2Power)
                         mEnemies[j]->instantEncase();
                     else
                         mEnemies[j]->takeDamage();
+
+                    if (!wasEncased && (mEnemies[j]->isFullyEncased() || mEnemies[j]->isPartiallyEncased())
+                        )
+                        mAudio.playEffect("assets/Sounds/frozen.ogg");
                 }
 
                 mSnowballs[i].setExpired();
@@ -1681,12 +1728,14 @@ void Game::checkPlayerEnemyCollision() {
                 mPlayer1.getBounds().intersects(mEnemies[i]->getBounds()) &&
                 sf::Keyboard::isKeyPressed(sf::Keyboard::Down)) {
                 mEnemies[i]->startRolling(mPlayer1.isFacingRight(), 0);
+                mAudio.playEffect("assets/Sounds/kick.ogg");
                 mScore1 += mEnemies[i]->getPoints();
             }
             if (mPlayer2.isAlive() &&
                 mPlayer2.getBounds().intersects(mEnemies[i]->getBounds()) &&
                 sf::Keyboard::isKeyPressed(sf::Keyboard::S)) {
                 mEnemies[i]->startRolling(mPlayer2.isFacingRight(), 1);
+                mAudio.playEffect("assets/Sounds/kick.ogg");
                 mScore2 += mEnemies[i]->getPoints();
             }
             continue;
@@ -1695,12 +1744,19 @@ void Game::checkPlayerEnemyCollision() {
         if (mEnemies[i]->isPartiallyEncased()) continue;
 
         if (mPlayer1.isAlive() && !mPlayer1.isRespawning() && !mPlayer1.isInBalloonMode() &&
-            mPlayer1.getBounds().intersects(mEnemies[i]->getBounds()))
+            mPlayer1.getBounds().intersects(mEnemies[i]->getBounds())
+            ) {
             mPlayer1.loseLife();
+            mAudio.playEffect("assets/Sounds/life-lost.ogg");
+            }   
+
 
         if (mPlayer2.isAlive() && !mPlayer2.isRespawning() && !mPlayer2.isInBalloonMode() &&
-            mPlayer2.getBounds().intersects(mEnemies[i]->getBounds()))
+            mPlayer2.getBounds().intersects(mEnemies[i]->getBounds())
+            ) {
             mPlayer2.loseLife();
+            mAudio.playEffect("assets/Sounds/life-lost.ogg");
+            }
     }
 }
 
@@ -1735,6 +1791,7 @@ void Game::checkRollingEnemyCollision() {
                 spawnPowerUp(bounds.left, bounds.top);
 
                 mEnemies[j]->setDead();
+                mAudio.playEffect("assets/Sounds/life-lost.ogg");
                 int points = mEnemies[j]->getPoints();
                 bool isBoss = (points >= 200);
                 if (isBoss) {
@@ -1778,12 +1835,18 @@ void Game::checkKnifePlayerCollision() {
             tornado->setNearestPlayerPos(p2);
 
         if (mPlayer1.isAlive() && !mPlayer1.isRespawning() &&
-            tornado->getKnifeBounds().intersects(mPlayer1.getBounds()))
+            tornado->getKnifeBounds().intersects(mPlayer1.getBounds())
+            ) {
             mPlayer1.loseLife();
+            mAudio.playEffect("assets/Sounds/life-lost.ogg");
+            }
 
         if (mPlayer2.isAlive() && !mPlayer2.isRespawning() &&
-            tornado->getKnifeBounds().intersects(mPlayer2.getBounds()))
+            tornado->getKnifeBounds().intersects(mPlayer2.getBounds())
+            ){ 
             mPlayer2.loseLife();
+            mAudio.playEffect("assets/Sounds/life-lost.ogg");
+            }
     }
 }
 
@@ -1911,6 +1974,7 @@ void Game::checkPowerUpCollection() {
             mPlayer1.getBounds().intersects(
                 mPowerUps[i].getBounds())) {
             mPowerUps[i].collect();
+            mAudio.playEffect("assets/Sounds/powerup.ogg");
             applyPowerUp(mPowerUps[i].getType(), 1);
         }
 
@@ -1919,6 +1983,7 @@ void Game::checkPowerUpCollection() {
             mPlayer2.getBounds().intersects(
                 mPowerUps[i].getBounds())) {
             mPowerUps[i].collect();
+            mAudio.playEffect("assets/Sounds/powerup.ogg");
             applyPowerUp(mPowerUps[i].getType(), 2);
         }
     }
@@ -2273,13 +2338,14 @@ void Game::drawBackground() {
 }
 // bg music
 void Game::updateBackgroundMusic() {
-    if (mState != PLAYING) {
-        mAudio.playMusic("assets/Sounds/screen.ogg");
-        return;
+    if (mState == PLAYING) {
+        mAudio.playMusic("assets/Sounds/Playing.ogg");
     }
-
-    if (mCurrentLevel == 5 || mCurrentLevel == 10)
-        mAudio.playMusic("assets/Sounds/boss.ogg");
-    else
-        mAudio.playMusic("assets/Sounds/level.ogg");
+  
+    else if(mState != GAME_OVER && mState != LEVEL_COMPLETE && mState != VICTORY)
+    {
+        // SPLASH, LOGIN, REGISTER, CHARACTER_SELECT, MAIN_MENU,
+        // PAUSED, SHOP_SCREEN, LEADERBOARD_SCREEN
+        mAudio.playMusic("assets/Sounds/Screens.ogg");
+    }
 }

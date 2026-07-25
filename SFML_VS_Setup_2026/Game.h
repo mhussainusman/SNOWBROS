@@ -148,10 +148,7 @@ private:
     // SCREEN UPDATES
     // ---------------------------------------------------------------
     void updateLeaderboard(float deltaTime);
-    void updateLogin();
-    void updateRegister();
-    void updateCharSelect();
-    void updateMainMenu();
+
     void updatePlaying(float deltaTime);
     
     void updatePaused();
