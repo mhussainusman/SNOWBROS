@@ -28,13 +28,14 @@ bool HUD::loadFont(const std::string& fontPath) {
  
 
     // player 2 score — below label
+ 
     setupText(mScore2Text, 20, sf::Color::White, 698.f, 25.f);
     mScore2Text.setString("000000");
     mScore2Text.setOutlineColor(sf::Color::Black);
     mScore2Text.setOutlineThickness(2.f);
 
     // player 2 lives — below score
-    setupText(mLives2Text, 18, sf::Color::Yellow, 700.f, 45.f);
+    setupText(mLives2Text, 18, sf::Color::Yellow, 730.f, 45.f);
     mLives2Text.setString("LIFE: 0");
     mLives2Text.setOutlineColor(sf::Color::Black);
     mLives2Text.setOutlineThickness(2.f);
@@ -84,6 +85,8 @@ void HUD::update(int score1, int lives1,
     std::string s2 = std::to_string(score2);
     while (s2.size() < 6) s2 = "0" + s2;
     mScore2Text.setString(s2);
+    float width2 = mScore2Text.getGlobalBounds().width;
+    mScore2Text.setPosition(803.f - width2, 25.f);
 
     // update lives — show mLives - 1 as extra lives
     // because 3 total = 2 shown in HUD
@@ -96,6 +99,8 @@ void HUD::update(int score1, int lives1,
     if (extraLives2 < 0) extraLives2 = 0;
     mLives2Text.setString("LIFE: " +
         std::to_string(extraLives2));
+    float width3 = mLives2Text.getGlobalBounds().width;
+    mLives2Text.setPosition(802.f - width3, 45.f);
 
     // update level
     mLevelText.setString("LEVEL " +
@@ -103,7 +108,10 @@ void HUD::update(int score1, int lives1,
 
     // update gems
     mGemText1.setString("GEMS: " + std::to_string(gems1));
+
     mGemText2.setString("GEMS: " + std::to_string(gems2));
+    float width = mGemText2.getGlobalBounds().width;
+    mGemText2.setPosition(803.f - width, 65.f);
 };
 
 

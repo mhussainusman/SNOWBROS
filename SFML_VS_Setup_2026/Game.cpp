@@ -72,7 +72,7 @@ Game::Game()
     mPlatformCount(0), mPlatformCapacity(20),
     mEnemyCount(0), mEnemyCapacity(20),
     mSnowballCount(0), mSnowballCapacity(20),
-	mState(SHOP_SCREEN), // Changescreen (SPLASH -> LOGIN -> REGISTER -> CHARACTER_SELECT -> MAIN_MENU -> PLAYING -> LEVEL_COMPLETE -> PAUSED -> SHOP_SCREEN -> GAME_OVER -> VICTORY -> LEADERBOARD_SCREEN)
+	mState(MAIN_MENU), // Changescreen (SPLASH -> LOGIN -> REGISTER -> CHARACTER_SELECT -> MAIN_MENU -> PLAYING -> LEVEL_COMPLETE -> PAUSED -> SHOP_SCREEN -> GAME_OVER -> VICTORY -> LEADERBOARD_SCREEN)
     mLoginPlayerTurn(1),
     mTypingConfirm(false),
     mTypingUsername(true),
@@ -326,7 +326,7 @@ void Game::processEvents() {
                 // DEBUG — press number keys to test power ups on player 1
                 // REMOVE THESE BEFORE FINAL SUBMISSION
                 if (event.key.code == sf::Keyboard::P)
-                    applyPowerUp(GEM, 1);
+                    applyPowerUp(GEM, 2);
                 if (event.key.code == sf::Keyboard::O)
                     applyPowerUp(SPEED_BOOST, 1);
                 if (event.key.code == sf::Keyboard::I)
@@ -368,7 +368,7 @@ void Game::processEvents() {
 
                 if (event.key.code == sf::Keyboard::Return) {
                     if (mMenuSelection == 0) {
-                        mCurrentLevel = 1; // changelevel
+                        mCurrentLevel = 4; // changelevel
                         mScore1 = 0;
                         mScore2 = 0;
                         mScoreSaved = false;
@@ -539,6 +539,9 @@ void Game::update(float deltaTime) {
 
 
 void Game::updatePlaying(float deltaTime) {
+
+    if (mCurrentLevel == 4 || mCurrentLevel == 9)
+        mBonusTimerElapsed += deltaTime;
 
     // update power ups
     for (int i = 0; i < mPowerUpCount; i++)
@@ -824,7 +827,7 @@ void Game::renderLogin() {
     tagText.setCharacterSize(28);
     tagText.setFillColor(tagColor);
     drawCenteredText(tagText, 126.f);  
-    https://gamma.app/
+    
     
 
     // ── Input fields ─────────────────────────────────────────────
@@ -1441,20 +1444,22 @@ void Game::renderPlaying() {
     p2tag.setFillColor(sf::Color(255, 100, 180));
     
     float p2Width = p2tag.getGlobalBounds().width;
-    p2tag.setPosition(795.f - p2Width, 5.f);   // right-anchored, grows leftward
+    p2tag.setPosition(801.f - p2Width, 5.f);   // right-anchored, grows leftward
     mWindow.draw(p2tag);
 
 // A timer added on lvl 4 & 9 to warn players before the power ups disappears.
     if (mCurrentLevel == 4 || mCurrentLevel == 9) {
-        float timeLeft = 10.f - mBonusTimerClock.getElapsedTime().asSeconds();
+        float timeLeft = 10.f - mBonusTimerElapsed;
         if (timeLeft < 0.f) timeLeft = 0.f;
 
         sf::Text bonusTimer;
-        bonusTimer.setFont(mFont);
+        bonusTimer.setFont(mFont3);
         bonusTimer.setString(std::to_string((int)timeLeft) + "s");
-        bonusTimer.setCharacterSize(26);
+        bonusTimer.setCharacterSize(20);
+		bonusTimer.setOutlineColor(sf::Color::Transparent);
+		bonusTimer.setOutlineThickness(2.f);
         bonusTimer.setFillColor(sf::Color(0, 255, 0));
-        bonusTimer.setPosition(385.f, 52.f);
+        bonusTimer.setPosition(397.f, 59.f);
         mWindow.draw(bonusTimer);
     }
 
@@ -1508,6 +1513,8 @@ void Game::renderLevelComplete() {
     next.setFont(mFont);
     next.setString("Press ENTER to continue");
     next.setCharacterSize(25);
+    next.setOutlineColor(sf::Color::Black);
+    next.setOutlineThickness(2.f);
     next.setFillColor(sf::Color(128, 128, 128));
     drawCenteredText(next, 460.f);
 }
@@ -1682,7 +1689,7 @@ void Game::loadCurrentLevel() {
 
     // restart the hardcoded bonus-level display timer whenever levels 4/9 load
     if (mCurrentLevel == 4 || mCurrentLevel == 9)
-        mBonusTimerClock.restart();
+		mBonusTimerElapsed = 0.f;
 }
 
 void Game::checkLevelComplete() {

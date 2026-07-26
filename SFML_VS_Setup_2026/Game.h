@@ -278,7 +278,7 @@ private:
     bool mKeepPowerThisTransition;   // true only for the one transition right after level 4 or 9
     void spawnBonusCorridor(int count);   // places count power-ups randomly on this level's platforms
 
-    sf::Clock mBonusTimerClock;
+    float mBonusTimerElapsed = 0.f;   // counts up only while actually playing (level 4/9)
 
     // helper functions
     void addPowerUp(PowerUp p);
