@@ -186,7 +186,7 @@ private:
     // WINDOW / FONT
     // ---------------------------------------------------------------
     sf::RenderWindow mWindow;
-    sf::Font         mFont;
+    sf::Font         mFont, mFont2;
     GameState        mState;
 
     // ---------------------------------------------------------------
@@ -287,5 +287,6 @@ private:
     void updatePowerUpEffects(float deltaTime);
 
     void applyPowerUp(PowerUpType type, int player);
+    void resetPowerUpEffects();
     void drawBackground();
 };

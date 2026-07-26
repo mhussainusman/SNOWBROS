@@ -24,18 +24,18 @@ bool HUD::loadFont(const std::string& fontPath) {
  
 
     // player 2 score — below label
-    setupText(mScore2Text, 20, sf::Color::White, 715.f, 25.f);
+    setupText(mScore2Text, 20, sf::Color::White, 698.f, 25.f);
     mScore2Text.setString("000000");
 
     // player 2 lives — below score
-    setupText(mLives2Text, 18, sf::Color::Yellow, 715.f, 45.f);
+    setupText(mLives2Text, 18, sf::Color::Yellow, 700.f, 45.f);
     mLives2Text.setString("LIFE: 0");
 
     // gemscount 
     setupText(mGemText1, 18, sf::Color(0, 255, 200), 9.f, 65.f);
     mGemText1.setString("GEMS: 0");
 
-    setupText(mGemText2, 18, sf::Color(0, 255, 200), 714.f, 65.f);
+    setupText(mGemText2, 18, sf::Color(0, 255, 200), 699.f, 65.f);
     mGemText2.setString("GEMS: 0");
 
 

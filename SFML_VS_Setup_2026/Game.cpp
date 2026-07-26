@@ -70,7 +70,7 @@ Game::Game()
     mPlatformCount(0), mPlatformCapacity(20),
     mEnemyCount(0), mEnemyCapacity(20),
     mSnowballCount(0), mSnowballCapacity(20),
-	mState(SPLASH), // Changescreen (SPLASH -> LOGIN -> MAIN_MENU -> PLAYING -> PAUSED -> GAME_OVER -> VICTORY)
+	mState(MAIN_MENU), // Changescreen (SPLASH -> LOGIN -> MAIN_MENU -> PLAYING -> PAUSED -> GAME_OVER -> VICTORY)
     mLoginPlayerTurn(1),
     mTypingConfirm(false),
     mTypingUsername(true),
@@ -113,9 +113,9 @@ Game::Game()
     mPowerUps = new PowerUp[mPowerUpCapacity];
 
     mWindow.setFramerateLimit(60);
-
+    mFont2.loadFromFile("assets/Fonts/ps1.ttf");
     mFont.loadFromFile("assets/Fonts/ps2.ttf");
-    mHUD.loadFont("assets/Fonts/ps2.ttf");
+    mHUD.loadFont("assets/Fonts/ps3.ttf");
     mLeaderboard.setFont(mFont);
 
     PowerUp::preloadAll();//load powerups
@@ -369,6 +369,7 @@ void Game::processEvents() {
                         mGameOver = false;
                         mPlayer1.resetLives();
                         mPlayer2.resetLives();
+                        resetPowerUpEffects();
                         mLevelManager.selectBonusLevels();
                         loadCurrentLevel();
                         mState = PLAYING;
@@ -1336,7 +1337,7 @@ void Game::renderMainMenu() {
     mWindow.draw(mMenuBgSprite);
 
     sf::Text title;
-    title.setFont(mFont);
+    title.setFont(mFont2);
     title.setString("SNOW BROS");
     title.setCharacterSize(62);
     title.setFillColor(sf::Color::Red);
@@ -1412,7 +1413,7 @@ void Game::renderPlaying() {
     sf::Text p1tag;
     p1tag.setFont(mFont);
     p1tag.setString(mP1Username);
-    p1tag.setCharacterSize(16);
+    p1tag.setCharacterSize(20);
     p1tag.setFillColor(sf::Color::Cyan);
     p1tag.setPosition(8.f, 5.f);
     mWindow.draw(p1tag);
@@ -1420,9 +1421,11 @@ void Game::renderPlaying() {
     sf::Text p2tag;
     p2tag.setFont(mFont);
     p2tag.setString(mP2Username);
-    p2tag.setCharacterSize(16);
+    p2tag.setCharacterSize(20);
     p2tag.setFillColor(sf::Color(100, 255, 150));
-    p2tag.setPosition(710.f, 5.f);
+    
+    float p2Width = p2tag.getGlobalBounds().width;
+    p2tag.setPosition(795.f - p2Width, 5.f);   // right-anchored, grows leftward
     mWindow.draw(p2tag);
 
 // A timer added on lvl 4 & 9 to warn players before the power ups disappears.
@@ -1453,13 +1456,13 @@ void Game::renderLevelComplete() {
     mWindow.draw(overlay);
 
     sf::Text title;
-    title.setFont(mFont);
+    title.setFont(mFont2);
 
     if (mCurrentLevel == 5)       title.setString("HELL OF A LOOT!");      // just finished level 4
     else if (mCurrentLevel == 10) title.setString("HELL OF A LOOT!");      // just finished level 9
     else                          title.setString("LEVEL COMPLETED!");
    
-    title.setCharacterSize(56);
+    title.setCharacterSize(52);
     title.setFillColor(sf::Color::Yellow);
     drawCenteredText(title, 120.f);
 
@@ -1505,38 +1508,38 @@ void Game::renderPaused() {
     mWindow.draw(overlay);
 
     sf::Text title;
-    title.setFont(mFont);
+    title.setFont(mFont2);
     title.setString("PAUSED");
-    title.setCharacterSize(52);
+    title.setCharacterSize(44);
     title.setFillColor(sf::Color::Yellow);
     drawCenteredText(title, 130.f);
 
     sf::Text resume;
-    resume.setFont(mFont);
+    resume.setFont(mFont2);
     resume.setString("R - RESUME");
-    resume.setCharacterSize(30);
+    resume.setCharacterSize(22);
     resume.setFillColor(sf::Color::White);
     drawCenteredText(resume, 250.f);
 
     sf::Text menu;
-    menu.setFont(mFont);
+    menu.setFont(mFont2);
     menu.setString("M - MAIN MENU");
-    menu.setCharacterSize(30);
+    menu.setCharacterSize(22);
     menu.setFillColor(sf::Color::White);
     drawCenteredText(menu, 310.f);
 
     sf::Text shopHint;
-    shopHint.setFont(mFont);
+    shopHint.setFont(mFont2);
     shopHint.setString("O - OPEN SHOP");
-    shopHint.setCharacterSize(28);
+    shopHint.setCharacterSize(20);
     shopHint.setFillColor(sf::Color(255, 215, 0));
     drawCenteredText(shopHint, 370.f);
 
     sf::Text gemsPaused;
-    gemsPaused.setFont(mFont);
+    gemsPaused.setFont(mFont2);
     gemsPaused.setString("P1 GEMS: " + std::to_string(mGemCount1) +
         "   P2 GEMS: " + std::to_string(mGemCount2));
-    gemsPaused.setCharacterSize(22);
+    gemsPaused.setCharacterSize(15);
     gemsPaused.setFillColor(sf::Color(100, 200, 255));
     drawCenteredText(gemsPaused, 468.f);
 }
@@ -2348,4 +2351,17 @@ void Game::updateBackgroundMusic() {
         // PAUSED, SHOP_SCREEN, LEADERBOARD_SCREEN
         mAudio.playMusic("assets/Sounds/Screens.ogg");
     }
+}
+// reseting powerups
+
+void Game::resetPowerUpEffects() {
+    mSpeedBoostTimer1 = 0.f; mSpeedBoostTimer2 = 0.f;
+    mBalloonTimer1 = 0.f;    mBalloonTimer2 = 0.f;
+    mSnowballPower1 = false; mSnowballPower2 = false;
+    mDistanceBoost1 = false; mDistanceBoost2 = false;
+
+    mPlayer1.setSpeedBoost(false);   mPlayer2.setSpeedBoost(false);
+    mPlayer1.setBalloonMode(false);  mPlayer2.setBalloonMode(false);
+
+    mKeepPowerThisTransition = false;
 }
