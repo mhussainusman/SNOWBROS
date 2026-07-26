@@ -1,6 +1,7 @@
 #pragma once
 #include <SFML/Graphics.hpp>
 #include "Platform.h"
+#include <cmath>
 
 
 class Player {

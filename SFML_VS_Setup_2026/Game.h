@@ -186,7 +186,7 @@ private:
     // WINDOW / FONT
     // ---------------------------------------------------------------
     sf::RenderWindow mWindow;
-    sf::Font         mFont, mFont2;
+    sf::Font         mFont, mFont2, mFont3;
     GameState        mState;
 
     // ---------------------------------------------------------------

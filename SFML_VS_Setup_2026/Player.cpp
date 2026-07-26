@@ -333,6 +333,28 @@ void Player::draw(sf::RenderWindow& window, bool showHitbox) {
         window.draw(mHitbox); // fallback if PNG failed to load
     }
 
+    // respawn invincibility shield — golden pulsing ring, hugs the hitbox
+    if (mRespawning) {
+        float largerDim = (mHitbox.getSize().x > mHitbox.getSize().y)
+            ? mHitbox.getSize().x : mHitbox.getSize().y;
+        float baseRadius = largerDim / 2.f + 6.f; // small padding beyond the hitbox edge
+
+        // 0..1 smooth pulse cycle, ~1.6 seconds per cycle
+        float cyclePos = (1.f - std::cos(mRespawnTimer * 6.28318f / 1.6f)) / 2.f;
+        float radius = baseRadius * (1.f + 0.08f * cyclePos);
+        sf::Uint8 alpha = static_cast<sf::Uint8>(140 + 90 * cyclePos); // 140..230
+
+        sf::CircleShape shield(radius);
+        shield.setOrigin(radius, radius);
+        shield.setPosition(
+            mHitbox.getPosition().x + mHitbox.getSize().x / 2.f,
+            mHitbox.getPosition().y + mHitbox.getSize().y / 2.f);
+        shield.setFillColor(sf::Color(239, 159, 39, static_cast<sf::Uint8>(alpha * 0.3f)));
+        shield.setOutlineColor(sf::Color(239, 159, 39, alpha));
+        shield.setOutlineThickness(2.f);
+        window.draw(shield);
+    }
+
     if (showHitbox) {
         sf::RectangleShape debug;
         debug.setPosition(mHitbox.getPosition());
