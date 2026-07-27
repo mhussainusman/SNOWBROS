@@ -60,6 +60,7 @@ private:
     float mJumpTimer;      // counts time since last jump
     float mJumpInterval;   // how often it jumps — randomized each hop
     const float JUMP_FORCE = -480.f;
+
 };
 
 // ─────────────────────────────────────────────
@@ -85,6 +86,7 @@ private:
     float mSpawnInterval;   // how often a child spawns
     bool  mChildReady;      // true when a child is waiting to be collected
     MogeraChild* mPendingChild; // the child waiting to be added to game
+    int mChildrenSpawned;  // tracks total children spawned so far
 };
 
 // ─────────────────────────────────────────────
@@ -133,6 +135,7 @@ private:
     int mRocketCount;
 
     void fireRocket(sf::Vector2f direction);
+   
 
 public:
     void setPlayerPos(sf::Vector2f pos) { mPlayerPos = pos; }

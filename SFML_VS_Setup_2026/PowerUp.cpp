@@ -39,11 +39,12 @@ PowerUp::PowerUp()
     mVisual.setFillColor(mColor);
 }
 
-PowerUp::PowerUp(float x, float y, PowerUpType type)
+PowerUp::PowerUp(float x, float y, PowerUpType type, float size, sf::Color tint)
     : mType(type),
     mCollected(false),
     mExpired(false),
-    mLifeTimer(0.f)
+    mLifeTimer(0.f),
+    mTint(tint)
 {
 
     // set color based on type — used by mVisual fallback if sprite fails
@@ -56,11 +57,11 @@ PowerUp::PowerUp(float x, float y, PowerUpType type)
     case EXTRA_LIFE:     mColor = sf::Color(255, 50, 50);   break; // red
     }
 
-    mHitbox.setSize(sf::Vector2f(32.f, 32.f));
+    mHitbox.setSize(sf::Vector2f(size, size));
     mHitbox.setPosition(x, y);
     mHitbox.setFillColor(sf::Color::Transparent);
 
-    mVisual.setSize(sf::Vector2f(32.f, 32.f));
+    mVisual.setSize(sf::Vector2f(size, size));
     mVisual.setPosition(x, y);
     mVisual.setFillColor(mColor);
 
@@ -100,6 +101,7 @@ void PowerUp::draw(sf::RenderWindow& window, bool showHitbox) {
         sprite.setTexture(*mTexturePtr);
         sprite.setScale(mBaseScaleX, mBaseScaleY);
         sprite.setPosition(mHitbox.getPosition());
+        sprite.setColor(mTint); // white = unchanged; gold etc. tints the same texture
         window.draw(sprite);
     }
     else {

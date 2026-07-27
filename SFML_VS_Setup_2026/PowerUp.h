@@ -17,7 +17,9 @@ enum PowerUpType {
 // player walks over it to collect
 class PowerUp {
 public:
-    PowerUp(float x, float y, PowerUpType type);
+    // size and tint are optional — default to normal 32px + no tint.
+    // Pass a bigger size and a gold tint for "reward" pickups like boss drops.
+    PowerUp(float x, float y, PowerUpType type, float size = 32.f, sf::Color tint = sf::Color::White);
     PowerUp(); // default constructor for arrays
 
     void update(float deltaTime);
@@ -56,6 +58,7 @@ private:
     float mLifeTimer;       // how long before it disappears
 
     sf::Color mColor;       // color based on type — used by mVisual fallback
+    sf::Color mTint = sf::Color::White; // applied to the sprite — white = no change
 
     // shared texture cache — one copy per power-up type, for the whole
     // program's lifetime. Filled once by preloadAll().

@@ -187,7 +187,8 @@ Mogera::Mogera(float x, float y)
     mSpawnTimer(0.f),
     mSpawnInterval(3.f),  // spawns a child every 3 seconds
     mChildReady(false),
-    mPendingChild(nullptr)
+    mPendingChild(nullptr),
+    mChildrenSpawned(0)
 {
     // Mogera is large — takes up significant screen space
     mHitbox.setSize(sf::Vector2f(115.f, 110.f));
@@ -210,7 +211,7 @@ void Mogera::update(float deltaTime,
 
     // spawn child enemy periodically
     mSpawnTimer += deltaTime;
-    if (mSpawnTimer >= interval) {
+    if (mSpawnTimer >= interval && mChildrenSpawned < 15) {
         mSpawnTimer = 0.f;
 
         // spawn child on alternating sides
@@ -222,6 +223,7 @@ void Mogera::update(float deltaTime,
 
         mPendingChild = new MogeraChild(childX, childY, goRight);
         mChildReady = true;
+        mChildrenSpawned += 1;
     }
 }
 

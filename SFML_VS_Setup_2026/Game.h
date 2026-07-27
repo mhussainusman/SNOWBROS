@@ -289,4 +289,5 @@ private:
     void applyPowerUp(PowerUpType type, int player);
     void resetPowerUpEffects();
     void drawBackground();
+    float findLandingY(float x, float fallbackY);
 };

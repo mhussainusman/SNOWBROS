@@ -367,8 +367,9 @@ void Game::processEvents() {
                 if (mMenuSelection > 3) mMenuSelection = 0;
 
                 if (event.key.code == sf::Keyboard::Return) {
+                    mAudio.playEffect("assets/Sounds/menu.ogg");
                     if (mMenuSelection == 0) {
-                        mCurrentLevel = 4; // changelevel
+                        mCurrentLevel = 10; // changelevel
                         mScore1 = 0;
                         mScore2 = 0;
                         mScoreSaved = false;
@@ -665,7 +666,7 @@ void Game::updatePlaying(float deltaTime) {
     // remove dead enemies
     for (int i = mEnemyCount - 1; i >= 0; i--) {
         if (mEnemies[i]->isDead()) {
-
+            // BOSS AWARD
             // if this was a boss — award score and spawn gem drops
             Boss* boss = dynamic_cast<Boss*>(mEnemies[i]);
             if (boss != nullptr) {
@@ -673,11 +674,11 @@ void Game::updatePlaying(float deltaTime) {
                 mScore2 += boss->getPoints() / 2;
 
                 sf::FloatRect b = mEnemies[i]->getBounds();
-                for (int g = 0; g < 8; g++) {
-                    float dropX = b.left + (rand() % (int)b.width);
-                    float dropY = b.top + (rand() % (int)b.height);
-                    addPowerUp(PowerUp(dropX, dropY, GEM));
-                }
+                float centerX = b.left + b.width / 2.f;
+                float centerY = b.top + b.height / 2.f;
+                sf::Color gold(255, 215, 0);
+                addPowerUp(PowerUp(centerX, centerY-15.f, GEM, 84.f, gold));
+                addPowerUp(PowerUp(centerX-46.f, centerY-15.f, GEM, 84.f, gold));
                 mAudio.playEffect("assets/Sounds/bossDead.ogg");
             }
 
@@ -1822,7 +1823,9 @@ void Game::checkRollingEnemyCollision() {
 
                 // power spawns
                 sf::FloatRect bounds = mEnemies[j]->getBounds();
-                spawnPowerUp(bounds.left, bounds.top);
+                float landedY = findLandingY(bounds.left, bounds.top);
+                spawnPowerUp(bounds.left, landedY);
+                
 
                 mEnemies[j]->setDead();
                 mAudio.playEffect("assets/Sounds/life-lost.ogg");
@@ -1986,13 +1989,46 @@ void Game::spawnPowerUp(float x, float y) {
 void Game::spawnBonusCorridor(int count) {
     if (mPlatformCount == 0) return;
 
-    for (int i = 0; i < count; i++) {
-        int platIndex = rand() % mPlatformCount;
-        sf::FloatRect plat = mPlatforms[platIndex].getBounds();
+    const float SIZE = 32.f;         // power-up hitbox size
+    const float MIN_GAP = 40.f;      // minimum distance between power-up centers
 
-        float maxOffset = (plat.width > 32.f) ? (plat.width - 32.f) : 1.f;
-        float x = plat.left + (rand() % (int)maxOffset);
-        float y = plat.top - 32.f;
+    float placedX[50];
+    float placedY[50];
+    int placedCount = 0;
+
+    for (int i = 0; i < count && placedCount < 50; i++) {
+        bool foundSpot = false;
+        int attempts = 0;
+
+        float x = 0.f, y = 0.f;
+
+        // try a handful of random positions until one doesn't overlap
+        // an already-placed power-up
+        while (!foundSpot && attempts < 20) {
+            attempts++;
+
+            int platIndex = rand() % mPlatformCount;
+            sf::FloatRect plat = mPlatforms[platIndex].getBounds();
+
+            float maxOffset = (plat.width > SIZE) ? (plat.width - SIZE) : 1.f;
+            x = plat.left + (rand() % (int)maxOffset);
+            y = plat.top - SIZE;
+
+            foundSpot = true;
+            for (int k = 0; k < placedCount; k++) {
+                float dx = x - placedX[k];
+                float dy = y - placedY[k];
+                float distSq = dx * dx + dy * dy;
+                if (distSq < MIN_GAP * MIN_GAP) {
+                    foundSpot = false;
+                    break;
+                }
+            }
+        }
+
+        placedX[placedCount] = x;
+        placedY[placedCount] = y;
+        placedCount++;
 
         spawnPowerUp(x, y); // reuses your existing weighted random type pick
     }
@@ -2397,4 +2433,28 @@ void Game::resetPowerUpEffects() {
     mPlayer1.setBalloonMode(false);  mPlayer2.setBalloonMode(false);
 
     mKeepPowerThisTransition = false;
+}
+// make sure powerups drop on a platform if possible, otherwise fall back to original y
+float Game::findLandingY(float x, float fallbackY) {
+    float bestY = fallbackY;
+    float bestDist = -1.f;
+    bool found = false;
+
+    for (int i = 0; i < mPlatformCount; i++) {
+        sf::FloatRect plat = mPlatforms[i].getBounds();
+        if (x < plat.left || x > plat.left + plat.width) continue;
+
+        float landY = plat.top - 32.f; // sit on top of this platform
+        float dist = (landY > fallbackY) ? (landY - fallbackY) : (fallbackY - landY);
+
+        // keep whichever platform is closest to where the enemy died —
+        // checks both above AND below, not just the first x-match found
+        if (!found || dist < bestDist) {
+            found = true;
+            bestDist = dist;
+            bestY = landY;
+        }
+    }
+
+    return found ? bestY : fallbackY;
 }
